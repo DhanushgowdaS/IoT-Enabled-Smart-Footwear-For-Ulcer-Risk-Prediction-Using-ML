@@ -4,7 +4,7 @@
 #include <Preferences.h>
 
 #define FSR1_PIN 34
-#define FSR2_PIN 36
+#define FSR2_PIN 35
 #define FSR3_PIN 32
 #define FSR4_PIN 33
 #define ONE_WIRE_BUS 4
