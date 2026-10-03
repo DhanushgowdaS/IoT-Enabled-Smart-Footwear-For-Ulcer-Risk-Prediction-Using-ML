@@ -144,11 +144,15 @@ def data():
     conn.close()
 
     return [{
-        "timestamp": r[0], "scenario": r[1],
-        "fsr1": r[2], "fsr3": r[3] if False else r[3],
-        "fsr4": r[4] if False else r[5],
-        "fsr2": r[4], "temp1": r[6],
-        "avg_pressure": r[7], "max_pressure": r[8],
+        "timestamp": r[0],
+        "scenario": r[1],
+        "fsr1": r[2],
+        "fsr2": r[3],
+        "fsr3": r[4],
+        "fsr4": r[5],
+        "temp1": r[6],
+        "avg_pressure": r[7],
+        "max_pressure": r[8],
         "prediction": r[9]
     } for r in rows]
 
