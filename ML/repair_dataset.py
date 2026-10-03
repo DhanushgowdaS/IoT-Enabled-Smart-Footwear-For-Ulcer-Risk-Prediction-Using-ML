@@ -14,7 +14,7 @@ HEADER = [
     "Temperature", "LoggedAt",
 ]
 
-RECORD_START = re.compile(r"(\\d+),(RAW|AVG10),")
+RECORD_START = re.compile(r"(\d+),(RAW|AVG10),")
 
 
 def split_joined_line(line):
