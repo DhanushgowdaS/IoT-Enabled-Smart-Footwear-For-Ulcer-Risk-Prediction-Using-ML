@@ -1,19 +1,23 @@
 import joblib
 import pandas as pd
+from pathlib import Path
 
-# Load your saved model
-model = joblib.load('model.pkl')
+# Project root is one level above this ML folder.
+ROOT = Path(__file__).resolve().parents[1]
+MODEL_FILE = ROOT / "model.pkl"
 
-# Replace these column names with the exact features your model expects
-# Examples: 'pressure_sensor_1', 'pressure_sensor_2', 'temp_sensor'
+# These are the exact five inputs used by the current model.pkl.
 test_data = pd.DataFrame({
-    'feature_1': [100.5], 
-    'feature_2': [200.2],
-    'feature_3': [30.1]
+    "FSR1": [100.5],
+    "FSR2": [200.2],
+    "FSR3": [150.0],
+    "FSR4": [175.5],
+    "Temperature": [30.1],
 })
 
-# Get the prediction
+model = joblib.load(MODEL_FILE)
 prediction = model.predict(test_data)
 
-# Print the result
-print(f"Prediction result: {prediction}")
+print(f"Model: {type(model).__name__}")
+print(f"Features: {list(test_data.columns)}")
+print(f"Prediction: {prediction[0]}")
