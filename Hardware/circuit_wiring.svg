@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="900" viewBox="0 0 1500 900">
+<rect width="1500" height="900" fill="white"/>
+<rect x="25" y="25" width="1450" height="80" rx="14" fill="#12385d"/>
+<text x="750" y="60" text-anchor="middle" font-family="Arial" font-size="30" font-weight="700" fill="white">Detailed Smart Footwear Wiring Diagram</text>
+<text x="750" y="88" text-anchor="middle" font-family="Arial" font-size="18" fill="#eaf3fb">Four FSR voltage dividers, DS18B20 pull-up, common ground and final ESP32 pins</text>
+<rect x="50" y="140" width="560" height="680" rx="16" fill="#f7fafc" stroke="#9bb0c1" stroke-width="2"/>
+<text x="330" y="180" text-anchor="middle" font-family="Arial" font-size="26" font-weight="700">FSR Voltage Divider - Repeat x4</text>
+<line x1="130" y1="235" x2="470" y2="235" stroke="#e74c3c" stroke-width="7"/><text x="95" y="242" font-family="Arial" font-size="20" font-weight="700" fill="#e74c3c">3.3V</text>
+<circle cx="300" cy="320" r="55" fill="white" stroke="#333" stroke-width="4"/><text x="300" y="328" text-anchor="middle" font-family="Arial" font-size="22" font-weight="700">FSR</text>
+<line x1="300" y1="235" x2="300" y2="265" stroke="#333" stroke-width="6"/>
+<line x1="300" y1="375" x2="300" y2="435" stroke="#333" stroke-width="6"/>
+<circle cx="300" cy="435" r="7" fill="#222"/>
+<line x1="300" y1="435" x2="495" y2="435" stroke="#27ae60" stroke-width="6"/>
+<text x="505" y="442" font-family="Arial" font-size="18" font-weight="700" fill="#27ae60">ADC GPIO</text>
+<rect x="255" y="485" width="90" height="100" rx="5" fill="white" stroke="#8b5a2b" stroke-width="5"/><text x="300" y="545" text-anchor="middle" font-family="Arial" font-size="21" font-weight="700">10 kΩ</text>
+<line x1="300" y1="435" x2="300" y2="485" stroke="#222" stroke-width="6"/>
+<line x1="300" y1="585" x2="300" y2="655" stroke="#222" stroke-width="6"/>
+<line x1="260" y1="655" x2="340" y2="655" stroke="#222" stroke-width="6"/><line x1="275" y1="670" x2="325" y2="670" stroke="#222" stroke-width="5"/><line x1="288" y1="685" x2="312" y2="685" stroke="#222" stroke-width="4"/>
+<text x="355" y="663" font-family="Arial" font-size="18" font-weight="700">GND</text>
+<text x="330" y="735" text-anchor="middle" font-family="Arial" font-size="18">FSR1→GPIO34 • FSR2→GPIO35 • FSR3→GPIO32 • FSR4→GPIO33</text>
+<text x="330" y="770" text-anchor="middle" font-family="Arial" font-size="18">Each FSR has its own 10 kΩ resistor to GND.</text>
+
+<rect x="660" y="140" width="390" height="680" rx="16" fill="#f7fafc" stroke="#9bb0c1" stroke-width="2"/>
+<text x="855" y="180" text-anchor="middle" font-family="Arial" font-size="26" font-weight="700">ESP32 Connections</text>
+<rect x="760" y="230" width="190" height="430" rx="18" fill="#30343b" stroke="#111" stroke-width="3"/>
+<text x="855" y="285" text-anchor="middle" font-family="Arial" font-size="25" font-weight="700" fill="white">ESP32</text>
+<text x="855" y="355" text-anchor="middle" font-family="Arial" font-size="19" fill="#e74c3c">GPIO34 = FSR1</text>
+<text x="855" y="410" text-anchor="middle" font-family="Arial" font-size="19" fill="#f1c40f">GPIO35 = FSR2</text>
+<text x="855" y="465" text-anchor="middle" font-family="Arial" font-size="19" fill="#27ae60">GPIO32 = FSR3</text>
+<text x="855" y="520" text-anchor="middle" font-family="Arial" font-size="19" fill="#2980b9">GPIO33 = FSR4</text>
+<text x="855" y="575" text-anchor="middle" font-family="Arial" font-size="19" fill="#7b3fb3">GPIO4 = DS18B20 DQ</text>
+<text x="855" y="625" text-anchor="middle" font-family="Arial" font-size="18" fill="white">GND = common ground</text>
+<text x="855" y="700" text-anchor="middle" font-family="Arial" font-size="18" font-weight="700">VIN/5V from USB supply</text>
+<text x="855" y="735" text-anchor="middle" font-family="Arial" font-size="18" font-weight="700">3V3 rail powers DS18B20</text>
+
+<rect x="1100" y="140" width="350" height="680" rx="16" fill="#f7fafc" stroke="#9bb0c1" stroke-width="2"/>
+<text x="1275" y="180" text-anchor="middle" font-family="Arial" font-size="26" font-weight="700">DS18B20 Circuit</text>
+<rect x="1210" y="250" width="130" height="100" rx="12" fill="#252525"/><text x="1275" y="310" text-anchor="middle" font-family="Arial" font-size="20" fill="white">DS18B20</text>
+<text x="1275" y="385" text-anchor="middle" font-family="Arial" font-size="17">1 GND • 2 DQ • 3 VDD</text>
+<line x1="1275" y1="350" x2="1275" y2="450" stroke="#7b3fb3" stroke-width="6"/>
+<line x1="1325" y1="350" x2="1325" y2="450" stroke="#e74c3c" stroke-width="6"/>
+<rect x="1245" y="450" width="60" height="75" rx="5" fill="white" stroke="#8b5a2b" stroke-width="4"/><text x="1275" y="495" text-anchor="middle" font-family="Arial" font-size="15" font-weight="700">4.7 kΩ</text>
+<line x1="1275" y1="450" x2="1275" y2="425" stroke="#7b3fb3" stroke-width="5"/>
+<line x1="1325" y1="425" x2="1325" y2="525" stroke="#e74c3c" stroke-width="5"/>
+<line x1="1275" y1="425" x2="1420" y2="425" stroke="#7b3fb3" stroke-width="5"/>
+<text x="1418" y="417" text-anchor="end" font-family="Arial" font-size="16" font-weight="700" fill="#7b3fb3">DQ → GPIO4</text>
+<text x="1275" y="570" text-anchor="middle" font-family="Arial" font-size="17" fill="#e74c3c">4.7 kΩ pull-up DQ → 3.3V</text>
+<text x="1275" y="610" text-anchor="middle" font-family="Arial" font-size="17">VDD → 3.3V</text>
+<text x="1275" y="645" text-anchor="middle" font-family="Arial" font-size="17">GND → ESP32 GND</text>
+<text x="1275" y="710" text-anchor="middle" font-family="Arial" font-size="16">Common ground is required.</text>
+</svg>
