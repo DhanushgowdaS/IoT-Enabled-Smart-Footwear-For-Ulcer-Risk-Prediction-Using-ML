@@ -1,59 +1,84 @@
-# ML Workflow
+# Machine Learning Model
 
-## Purpose
+## Concept
 
-Estimate diabetic foot-ulcer risk indication by measuring deviation from learned healthy footwear sensor patterns.
+The model learns the pressure and temperature patterns of healthy reference users and measures how much a new footwear reading deviates from that healthy pattern.
 
-## Training Data
+\`\`\`
+Healthy reference data
+Person A + Person B
+        ↓
+80% Training
+        ↓
+Isolation Forest
+        ↓
+Healthy baseline
+        ↑
+10% Validation → q95 / q98 / q99 thresholds
+        ↑
+10% Test → final held-out healthy stability check
 
-- Person A: healthy reference
-- Person B: healthy reference
-- RAW records used for training
-- AVG10 records excluded because they are derived averages
+New sensor reading
+FSR1 FSR2 FSR3 FSR4 + Temperature
+        ↓
+Same feature engineering + scaling
+        ↓
+Anomaly score
+        ↓
+Healthy-pattern mismatch %
+        ↓
+Safe / Low Risk / Medium Risk / High Risk
+\`\`\`
+
+## Data handling
+
+- RAW records are used for model training and evaluation.
+- AVG10 records are excluded because they are derived averages.
+- Concatenated CSV records are repaired before parsing.
+- Split is chronological inside each Person + Scenario group to reduce direct temporal leakage.
+
+## Features
+
+- FSR1, FSR2, FSR3, FSR4
+- Temperature
+- FSR average
+- FSR maximum and minimum
+- FSR standard deviation
+- FSR distribution ratios
 
 ## Model
 
-**Isolation Forest** is trained as an unsupervised anomaly detector on the combined healthy reference data.
+\`StandardScaler\` followed by \`IsolationForest\` with 500 trees.
 
-### Input Features
+The model is unsupervised: it does not learn an \`ulcer / no-ulcer\` class because the supplied dataset does not contain true ulcer labels.
 
-- FSR1
-- FSR2
-- FSR3
-- FSR4
-- Temperature
-- FSR average
-- FSR max/min
-- FSR standard deviation
-- Four FSR distribution ratios
+## Prediction
 
-## Output
+A higher anomaly score means the current reading is less similar to the healthy reference pattern.
 
-The model produces:
-
-1. Anomaly score
-2. Healthy-pattern mismatch percentage
-3. Ulcer-risk indication
-
-### Mismatch Calculation
-
-```text
+\`\`\`
 Mismatch = clip((AnomalyScore - q95) / (q99 - q95) × 100, 0, 100)
-```
+Healthy Match = 100 - Mismatch
+\`\`\`
 
-The mismatch percentage is a healthy-pattern deviation index. It is **not** a probability of ulcer.
+| Condition | Risk indication |
+|---|---|
+| score ≤ q95 | Safe |
+| q95 < score ≤ q98 | Low Risk |
+| q98 < score ≤ q99 | Medium Risk |
+| score > q99 | High Risk |
 
-## Risk Bands
+The q95/q98/q99 thresholds are calibrated from the validation split only.
 
-| Mismatch | Indication |
-|---:|---|
-| 0% | Safe |
-| 0–33.33% | Low Risk |
-| 33.33–66.67% | Medium Risk |
-| 66.67–100% | High Risk |
+## Important limitation
 
-These bands are project-specific and must not be described as clinically validated thresholds.
+Mismatch % is a project-specific healthy-pattern deviation index. It is not ulcer probability. Because the supplied dataset contains healthy reference data only, clinical accuracy, sensitivity, specificity, and diagnostic performance cannot be claimed yet.
 
-## Next Step
+## Files
 
-Validate the model first, then integrate the same feature calculation and mismatch formula into FastAPI and the rolling 5-minute dashboard assessment.
+- \`train_model.py\` — trains and saves the model
+- \`predict.py\` — reusable inference function for FastAPI/Streamlit
+- \`test_model.py\` — full inference and sanity tests
+- \`ulcer_risk_model.pkl\` — generated model artifact
+- \`model_validation_report.json\` — training/validation/test report
+- \`test_results.json\` — final inference test output
