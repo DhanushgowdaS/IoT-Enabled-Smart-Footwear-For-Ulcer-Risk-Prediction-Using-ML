@@ -10,6 +10,7 @@ SCALER = ARTIFACT["scaler"]
 THRESHOLDS = ARTIFACT["thresholds"]
 REQUIRED = ["FSR1", "FSR2", "FSR3", "FSR4", "Temperature"]
 
+
 def make_features(df):
     missing = [c for c in REQUIRED if c not in df.columns]
     if missing:
@@ -23,20 +24,32 @@ def make_features(df):
         fs.std(axis=1), ratios
     ])
 
+
 def predict(df):
     X = SCALER.transform(make_features(df))
     score = -MODEL.decision_function(X)
+
     denominator = THRESHOLDS["q99"] - THRESHOLDS["q95"]
-    mismatch = np.clip(
-        (score - THRESHOLDS["q95"]) / denominator * 100.0, 0.0, 100.0
-    ) if denominator > 0 else np.zeros_like(score)
-    risk = np.where(
-        score <= THRESHOLDS["q95"], "Safe",
-        np.where(
-            score <= THRESHOLDS["q98"], "Low Risk",
-            np.where(score <= THRESHOLDS["q99"], "Medium Risk", "High Risk")
+    if denominator > 0:
+        mismatch = np.clip(
+            (score - THRESHOLDS["q95"]) / denominator * 100.0,
+            0.0,
+            100.0,
         )
+    else:
+        mismatch = np.zeros_like(score)
+
+    # User-facing risk is aligned directly with the displayed healthy-pattern mismatch.
+    risk = np.where(
+        mismatch <= 0.0,
+        "Safe",
+        np.where(
+            mismatch <= 33.333333,
+            "Low Risk",
+            np.where(mismatch <= 66.666667, "Medium Risk", "High Risk"),
+        ),
     )
+
     return pd.DataFrame({
         "AnomalyScore": score,
         "HealthyMatchPercent": 100.0 - mismatch,
