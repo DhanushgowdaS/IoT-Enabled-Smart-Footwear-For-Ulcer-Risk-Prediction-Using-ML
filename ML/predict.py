@@ -39,9 +39,10 @@ def predict(df):
     else:
         mismatch = np.zeros_like(score)
 
-    # User-facing risk is aligned directly with the displayed healthy-pattern mismatch.
+    # User-facing risk is aligned with the displayed healthy-pattern mismatch.
+    # 0-10%: Safe, >10-33.33%: Low Risk, >33.33-66.67%: Medium Risk, >66.67%: High Risk.
     risk = np.where(
-        mismatch <= 0.0,
+        mismatch <= 10.0,
         "Safe",
         np.where(
             mismatch <= 33.333333,
