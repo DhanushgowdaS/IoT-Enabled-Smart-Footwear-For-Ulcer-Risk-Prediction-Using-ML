@@ -7,10 +7,11 @@ from streamlit_autorefresh import st_autorefresh
 
 API_BASE = "https://iot-enabled-smart-footwear-for-ulcer.onrender.com"
 DATA_API = f"{API_BASE}/data"
+LATEST_API = f"{API_BASE}/latest"
 CSV_API = f"{API_BASE}/download_csv"
 
 st.set_page_config(
-    page_title="Smart Footwear Dashboard",
+    page_title="IoT-Enabled Smart Footwear",
     page_icon="🩺",
     layout="wide"
 )
@@ -39,12 +40,6 @@ h2, h3 {
 }
 [data-testid="stMetric"] {
     background: transparent;
-}
-.refresh-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin: 0.6rem 0 1.6rem 0;
 }
 .clock {
     color: #f3f5f9;
@@ -100,7 +95,7 @@ div[data-testid="stDownloadButton"] > button {
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🩺 Smart Footwear for Early Detection of Foot Ulcers")
+st.title("🩺 IoT-Enabled Smart Footwear for Foot Ulcer Risk Prediction Using Machine Learning")
 
 top_left, top_right = st.columns([1, 1])
 
@@ -115,28 +110,53 @@ with top_right:
     )
 
 try:
-    response = requests.get(DATA_API, timeout=15)
-    response.raise_for_status()
-    data = response.json()
+    data_response = requests.get(DATA_API, timeout=15)
+    data_response.raise_for_status()
+    data = data_response.json()
+
+    if not data:
+        latest_response = requests.get(LATEST_API, timeout=15)
+        latest_response.raise_for_status()
+        latest_data = latest_response.json()
+
+        if latest_data:
+            data = [latest_data]
 
     if not data:
         st.warning("Waiting for sensor data...")
         st.stop()
 
     df = pd.DataFrame(data)
+    required_columns = [
+        "timestamp", "scenario", "fsr1", "fsr2", "fsr3", "fsr4",
+        "temp1", "avg_pressure", "max_pressure",
+        "healthy_match_percent", "mismatch_percent", "ulcer_risk"
+    ]
+
+    missing_columns = [c for c in required_columns if c not in df.columns]
+
+    if missing_columns:
+        st.error(f"Missing API fields: {missing_columns}")
+        st.stop()
+
     df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
     df = df.dropna(subset=["timestamp"]).sort_values("timestamp")
+
+    if df.empty:
+        st.warning("Waiting for valid sensor data...")
+        st.stop()
 
     latest = df.iloc[-1]
     cutoff = latest["timestamp"] - pd.Timedelta(minutes=10)
     recent = df[df["timestamp"] >= cutoff].copy()
 
-    st.markdown("### Pressure Analysis", unsafe_allow_html=True)
-
     pressure_col, temp_col = st.columns(2)
 
     with pressure_col:
+        st.subheader("Pressure Analysis")
+
         fig_pressure = go.Figure()
+
         pressure_colors = {
             "fsr1": "#7ec8ff",
             "fsr2": "#3f8cff",
@@ -183,6 +203,7 @@ try:
                 color="#d8dee8"
             ),
         )
+
         st.plotly_chart(
             fig_pressure,
             use_container_width=True,
@@ -190,7 +211,10 @@ try:
         )
 
     with temp_col:
+        st.subheader("Temperature")
+
         fig_temp = go.Figure()
+
         fig_temp.add_trace(
             go.Scatter(
                 x=recent["timestamp"],
@@ -217,17 +241,24 @@ try:
             ),
             yaxis=dict(
                 title="Temperature (°C)",
-                range=[15, 35],
                 gridcolor="#252b36",
                 zeroline=False,
                 color="#d8dee8"
             ),
         )
+
         st.plotly_chart(
             fig_temp,
             use_container_width=True,
             config={"displayModeBar": False}
         )
+
+    st.markdown(
+        """
+        <div style="margin-top:10px;"></div>
+        """,
+        unsafe_allow_html=True
+    )
 
     risk_order = ["High Risk", "Medium Risk", "Low Risk", "Safe"]
     counts = recent["ulcer_risk"].value_counts()
@@ -238,7 +269,12 @@ try:
     }
 
     highest_count = max(risk_counts.values())
-    tied = [risk for risk in risk_order if risk_counts[risk] == highest_count]
+
+    tied = [
+        risk for risk in risk_order
+        if risk_counts[risk] == highest_count
+    ]
+
     recent_risks = recent["ulcer_risk"].astype(str).tolist()
 
     overall_risk = next(
@@ -253,19 +289,26 @@ try:
         "High Risk": ("🔴", "risk-dot-high"),
     }
 
-    dot, dot_class = risk_styles.get(overall_risk, ("🟢", "risk-dot-safe"))
+    dot, dot_class = risk_styles.get(
+        overall_risk,
+        ("🟢", "risk-dot-safe")
+    )
 
     st.markdown(
         f"""
         <div class="risk-box">
             <div class="risk-title">Overall Risk Assessment</div>
-            <div class="risk-main"><span class="{dot_class}">{dot}</span>&nbsp; {overall_risk}</div>
-            <div class="risk-sub">Based on Readings from the Last 10 Minutes</div>
+            <div class="risk-main">
+                <span class="{dot_class}">{dot}</span>&nbsp; {overall_risk}
+            </div>
+            <div class="risk-sub">
+                Based on Readings from the Last 10 Minutes
+            </div>
             <div class="risk-counts">
-                <span class="risk-dot-high">🔴 High Risk : {risk_counts["High Risk"]}</span>&nbsp;&nbsp;
-                <span class="risk-dot-medium">🟠 Medium Risk : {risk_counts["Medium Risk"]}</span>&nbsp;&nbsp;
-                <span class="risk-dot-low">🟡 Low Risk : {risk_counts["Low Risk"]}</span>&nbsp;&nbsp;
-                <span class="risk-dot-safe">🟢 Safe : {risk_counts["Safe"]}</span>
+                🔴 High Risk : {risk_counts["High Risk"]}&nbsp;&nbsp;
+                🟠 Medium Risk : {risk_counts["Medium Risk"]}&nbsp;&nbsp;
+                🟡 Low Risk : {risk_counts["Low Risk"]}&nbsp;&nbsp;
+                🟢 Safe : {risk_counts["Safe"]}
             </div>
             <div class="risk-sub" style="margin-top:12px;margin-bottom:0;">
                 Total Readings Analysed: {len(recent)}
@@ -277,10 +320,16 @@ try:
 
     st.subheader("Latest Entries & Status")
 
-    table = df.tail(20).sort_values("timestamp", ascending=False).copy()
+    table = df.tail(20).sort_values(
+        "timestamp",
+        ascending=False
+    ).copy()
+
     table.insert(0, "No.", range(1, len(table) + 1))
 
-    table["Time"] = table["timestamp"].dt.strftime("%d-%b-%Y %I:%M:%S %p")
+    table["timestamp"] = table["timestamp"].dt.strftime(
+        "%d-%b-%Y %I:%M:%S %p"
+    )
 
     status_icons = {
         "Safe": "🟢 Safe",
@@ -289,12 +338,16 @@ try:
         "High Risk": "🔴 High Risk",
     }
 
-    table["Display_Status"] = table["ulcer_risk"].map(status_icons).fillna(table["ulcer_risk"])
+    table["Display_Status"] = (
+        table["ulcer_risk"]
+        .map(status_icons)
+        .fillna(table["ulcer_risk"])
+    )
 
     table = table[
         [
             "No.",
-            "Time",
+            "timestamp",
             "Display_Status",
             "fsr1",
             "fsr2",
@@ -302,47 +355,58 @@ try:
             "fsr4",
             "temp1",
         ]
-    ].rename(
-        columns={
-            "Time": "timestamp",
-            "fsr1": "fsr1",
-            "fsr2": "fsr2",
-            "fsr3": "fsr3",
-            "fsr4": "fsr4",
-            "temp1": "temp1",
-        }
-    )
+    ]
 
     st.dataframe(
         table,
         use_container_width=True,
         hide_index=True,
         column_config={
-            "No.": st.column_config.NumberColumn("No.", width="small"),
-            "timestamp": st.column_config.TextColumn("timestamp"),
-            "Display_Status": st.column_config.TextColumn("Display_Status"),
-            "fsr1": st.column_config.NumberColumn("fsr1", format="%.3f"),
-            "fsr2": st.column_config.NumberColumn("fsr2", format="%.3f"),
-            "fsr3": st.column_config.NumberColumn("fsr3", format="%.3f"),
-            "fsr4": st.column_config.NumberColumn("fsr4", format="%.3f"),
-            "temp1": st.column_config.NumberColumn("temp1", format="%.4f"),
+            "No.": st.column_config.NumberColumn(
+                "No.",
+                width="small"
+            ),
+            "timestamp": st.column_config.TextColumn(
+                "timestamp"
+            ),
+            "Display_Status": st.column_config.TextColumn(
+                "Display_Status"
+            ),
+            "fsr1": st.column_config.NumberColumn(
+                "fsr1",
+                format="%.3f"
+            ),
+            "fsr2": st.column_config.NumberColumn(
+                "fsr2",
+                format="%.3f"
+            ),
+            "fsr3": st.column_config.NumberColumn(
+                "fsr3",
+                format="%.3f"
+            ),
+            "fsr4": st.column_config.NumberColumn(
+                "fsr4",
+                format="%.3f"
+            ),
+            "temp1": st.column_config.NumberColumn(
+                "temp1",
+                format="%.4f"
+            ),
         }
     )
 
     st.caption("Showing latest 20 readings")
 
-    download_col_left, download_col_right = st.columns([3, 1])
+    csv_response = requests.get(CSV_API, timeout=15)
+    csv_response.raise_for_status()
 
-    with download_col_right:
-        csv_response = requests.get(CSV_API, timeout=15)
-        csv_response.raise_for_status()
-        st.download_button(
-            "⬇ Download Sensor Data (CSV)",
-            csv_response.content,
-            file_name="sensor_data.csv",
-            mime="text/csv",
-            use_container_width=True,
-        )
+    st.download_button(
+        "⬇ Download Sensor Data (CSV)",
+        csv_response.content,
+        file_name="sensor_data.csv",
+        mime="text/csv",
+        use_container_width=False,
+    )
 
 except requests.RequestException as exc:
     st.error(f"Connection failed: {exc}")
