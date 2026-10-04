@@ -45,7 +45,7 @@ The test checks:
 - Full RAW-dataset inference
 - Valid anomaly scores
 - Mismatch range from 0% to 100%
-- Valid Safe/Low Risk/Medium Risk/High Risk output
+- Valid Safe/Low Risk/Medium Risk/High Risk output using the 0–10%, >10–33.33%, >33.33–66.67%, and >66.67% mismatch bands
 - One deterministic random real dataset row
 - Additional synthetic sensor patterns
 
