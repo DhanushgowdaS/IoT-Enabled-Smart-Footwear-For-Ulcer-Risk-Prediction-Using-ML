@@ -8,7 +8,7 @@ Reads:
 - 4 × FSR pressure sensors
 - 1 × DS18B20 temperature sensor
 
-Every 10 seconds, sensor values are averaged and sent
+Every 10 seconds, exactly 10 one-second sensor samples are averaged and sent
 to the FastAPI backend over HTTPS.
 
 Backend:
@@ -42,6 +42,7 @@ OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature tempSensors(&oneWire);
 
 unsigned long startTime = 0;
+unsigned long lastSampleTime = 0;
 
 int sensorSampleCount = 0;
 int tempSampleCount = 0;
@@ -116,9 +117,8 @@ void loop() {
   }
 
   if (
-    millis() - startTime >= 10000 &&
-    sensorSampleCount > 0 &&
-    tempSampleCount > 0
+    sensorSampleCount >= 10 &&
+    tempSampleCount >= 10
   ) {
 
     float avgFSR1 =
@@ -184,9 +184,8 @@ void loop() {
     tempSampleCount = 0;
 
     startTime = millis();
+    lastSampleTime = millis();
   }
-
-  delay(100);
 }
 
 void sendData(
