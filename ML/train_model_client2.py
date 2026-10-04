@@ -1,5 +1,6 @@
 import csv
 import io
+import re
 import joblib
 import numpy as np
 import pandas as pd
@@ -17,13 +18,17 @@ FEATURES = [
 ]
 
 def repair_csv(text):
-    header = text.splitlines()[0]
-    body = "\n".join(text.splitlines()[1:])
-    body = body.replace(",RAW,", "\nRAW,")
-    body = body.replace(",AVG10,", "\nAVG10,")
-    rows = list(csv.reader(io.StringIO(header + "\n" + body)))
-    valid = [r for r in rows if len(r) == 10]
-    return pd.DataFrame(valid[1:], columns=valid[0])
+    lines = text.splitlines()
+    header = lines[0]
+    repaired = [header]
+    for line in lines[1:]:
+        parts = re.split(r'(?<=\d)(?=\d{4,5},(?:RAW|AVG10),)', line)
+        repaired.extend(parts)
+    rows = list(csv.reader(io.StringIO("\n".join(repaired))))
+    valid = [row for row in rows[1:] if len(row) == 10]
+    if not valid:
+        raise ValueError("No valid dataset records found")
+    return pd.DataFrame(valid, columns=rows[0])
 
 def make_features(df):
     fs = df[["FSR1","FSR2","FSR3","FSR4"]].to_numpy(float)
@@ -46,11 +51,9 @@ df = repair_csv(text)
 for column in FEATURES[:5]:
     df[column] = pd.to_numeric(df[column], errors="coerce")
 
-df = df[df["Type"].eq("RAW")].copy()
-df = df.dropna(subset=FEATURES[:5])
+df = df[df["Type"].eq("RAW")].dropna(subset=FEATURES[:5]).copy()
 
 X = make_features(df)
-
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
