@@ -38,17 +38,29 @@ Mismatch % is a project-specific deviation index from the healthy reference patt
 Hardware/
 Firmware/
 Data/footwear_dataset.csv
-ML/train_model.py
-ML/test_model.py
-ML/ML_README.md
-PROCEDURE.md
+ML/
+├── train_model.py
+├── predict.py
+├── test_model.py
+├── TESTING.md
+├── ML_README.md
+├── MODEL_VALIDATION_REPORT.md
+├── model_validation_report.json
+└── test_results.json
+main.py
+app.py
+render.yaml
 requirements.txt
 README.md
+PROCEDURE.md
 ```
 
-## ML Model Artifact
+## Backend and Dashboard
 
-The binary model file `ML/ulcer_risk_model.pkl` is generated locally by `ML/train_model.py`.
+- `main.py` — FastAPI backend and data storage
+- `app.py` — Streamlit dashboard
+- `render.yaml` — basic Render configuration for the API
+- `ML/predict.py` — reusable model inference
 
 ## Current Status
 
