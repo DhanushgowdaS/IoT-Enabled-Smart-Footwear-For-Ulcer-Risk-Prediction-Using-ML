@@ -1,43 +1,56 @@
 {
   "status": "passed",
+  "model_version": "healthy-baseline-v2-avg10-scenario-aware",
+  "training_input": "AVG10 records only (10-second healthy windows)",
+  "scenario_aware": true,
   "dataset": {
     "physical_lines": 6098,
     "logical_rows_after_repair": 6103,
-    "raw_rows_used": 5548,
-    "avg10_rows_excluded": 555
+    "avg10_rows_used": 555,
+    "raw_rows_excluded": 5548,
+    "scenarios": [
+      "Heel_Pressure",
+      "High_Pressure",
+      "Left_Shift",
+      "No_Load",
+      "Right_Shift",
+      "Sitting",
+      "Standing",
+      "Toe_Pressure",
+      "Walking"
+    ]
   },
   "split": {
-    "train": 4438,
-    "validation": 555,
-    "test": 555,
-    "train_percent": 79.99279019466474,
-    "validation_percent": 10.003604902667627,
-    "test_percent": 10.003604902667627,
+    "train": 444,
+    "validation": 55,
+    "test": 56,
+    "train_percent": 80,
+    "validation_percent": 9.90990990990991,
+    "test_percent": 10.090090090090907,
     "method": "Chronological split within each Person+Scenario group"
   },
   "validation_thresholds": {
-    "q50": -0.016366396952960827,
-    "q90": 0.05538705199932239,
-    "q95": 0.08745275845495744,
-    "q98": 0.1403006770738208,
-    "q99": 0.14771100457689315
+    "q50": -0.0005867164746480857,
+    "q90": 0.027391025438594552,
+    "q95": 0.03830112663101819,
+    "q98": 0.039571163339350644,
+    "q99": 0.05136281090462534
   },
   "test_healthy_stability": {
-    "above_q95_percent": 3.6036036036036037,
-    "above_q98_percent": 1.0810810810810811,
-    "above_q99_percent": 0.9009009009009009,
+    "above_q95_percent": 0,
+    "above_q98_percent": 0,
+    "above_q99_percent": 0,
     "risk_counts": {
-      "Safe": 535,
-      "Low Risk": 8,
-      "Medium Risk": 3,
-      "High Risk": 9
-    },
-    "risk_rule": "Based on displayed mismatch percent: 0% Safe, <=33.33% Low Risk, <=66.67% Medium Risk, >66.67% High Risk"
+      "Safe": 56,
+      "Low Risk": 0,
+      "Medium Risk": 0,
+      "High Risk": 0
+    }
   },
   "notes": [
-    "The dataset contains healthy reference subjects only; no true ulcer/non-ulcer labels are available.",
-    "Therefore, accuracy, sensitivity, specificity, and clinical diagnostic performance cannot be computed from this dataset.",
-    "q95/q98/q99 are healthy-reference anomaly thresholds calibrated on the validation split only.",
+    "AVG10 records are used because the ESP32 sends a 10-second averaged reading.",
+    "Scenario is encoded as one-hot features so each activity is evaluated in its healthy-pattern context.",
+    "The supplied dataset contains healthy reference data only; clinical accuracy or diagnosis cannot be claimed.",
     "Mismatch percent is a healthy-pattern deviation index, not ulcer probability."
   ]
 }
