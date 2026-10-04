@@ -7,16 +7,16 @@ This file records project work using **What, When, Why, Where, How**.
 
 ---
 
-## 2026-10-04 — Repository Reset for Client 2
+## 2026-10-04 — Repository Reset
 
 ### What
-The GitHub repository was cleaned and rebuilt as the Client 2 working repository.
+The GitHub repository was cleaned and rebuilt as the working repository for the current project development.
 
 ### When
 2026-10-04
 
 ### Why
-The previous repository contained Client 1/experimental ML, dataset, backend, and dashboard files. They are not the correct source for the new Client 2 healthy-baseline ML workflow.
+The previous repository contained experimental ML, dataset, backend, and dashboard files that did not match the current healthy-baseline ML workflow.
 
 ### Where
 GitHub:
@@ -24,28 +24,28 @@ GitHub:
 
 ### How
 1. Reviewed the existing repository.
-2. Used the Client 1 ZIP only for required hardware reference files.
+2. Used the earlier project archive only for required hardware and firmware reference files.
 3. Removed the old Random Forest/risk-map workflow and old backend/dashboard files.
-4. Added the Client 2 source dataset.
-5. Added new Client 2 ML training/testing scripts.
+4. Added the current footwear dataset.
+5. Added the new healthy-baseline ML training/testing scripts.
 6. Added updated hardware documentation.
 7. Added this procedure file for future tracking.
 
 ---
 
-## 2026-10-04 — Client 2 Dataset
+## 2026-10-04 — Dataset
 
 ### What
-Added the new Client 2 footwear dataset containing Person A and Person B sensor data.
+Added the footwear dataset containing Person A and Person B sensor data.
 
 ### When
 2026-10-04
 
 ### Why
-The new ML method must learn healthy pressure/temperature patterns instead of assigning risk labels from scenario names.
+The ML method learns healthy pressure/temperature patterns instead of assigning risk labels from scenario names.
 
 ### Where
-`Data/client2_footwear_dataset.csv`
+`Data/footwear_dataset.csv`
 
 ### How
 The source data was checked for joined CSV records. The ML training script repairs joined records in memory before filtering RAW records. AVG10 records are excluded from model training because they are derived averages.
@@ -61,12 +61,12 @@ Prepared an unsupervised Isolation Forest model workflow.
 2026-10-04
 
 ### Why
-The Client 2 dataset provides healthy reference subjects but does not provide labelled ulcer/non-ulcer clinical outcomes. Isolation Forest can learn the healthy distribution without inventing ulcer labels.
+The dataset provides healthy reference subjects but does not provide labelled ulcer/non-ulcer clinical outcomes. Isolation Forest can learn the healthy distribution without inventing ulcer labels.
 
 ### Where
-- `ML/train_model_client2.py`
-- `ML/test_model_client2.py`
-- `ML/CLIENT2_ML_README.md`
+- `ML/train_model.py`
+- `ML/test_model.py`
+- `ML/ML_README.md`
 
 ### How
 1. Repair joined CSV records in memory.
