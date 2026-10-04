@@ -37,7 +37,7 @@ Training fits the scaler and Isolation Forest. Validation is used only to calibr
 
 The test set contains healthy reference records, so the useful measurement is healthy false-alert/stability rate at the selected anomaly thresholds, not classification accuracy.
 
-The generated JSON report contains the exact thresholds and held-out rates. Risk labels in the application are now aligned with the displayed mismatch percentage: 0% Safe, 0–33.33% Low Risk, 33.33–66.67% Medium Risk, and above 66.67% High Risk.
+The generated JSON report contains the exact thresholds and held-out rates. Risk labels in the application are aligned with the displayed mismatch percentage: 0–10% Safe, above 10–33.33% Low Risk, above 33.33–66.67% Medium Risk, and above 66.67% High Risk.
 
 ## Random real-dataset test
 
