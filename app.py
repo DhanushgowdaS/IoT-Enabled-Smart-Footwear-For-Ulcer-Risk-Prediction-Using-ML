@@ -1,5 +1,6 @@
 import time
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -11,6 +12,8 @@ API_BASE = "https://iot-enabled-smart-footwear-for-ulcer.onrender.com"
 DATA_API = f"{API_BASE}/data"
 LATEST_API = f"{API_BASE}/latest"
 CSV_API = f"{API_BASE}/download_csv"
+
+IST = ZoneInfo("Asia/Kolkata")
 
 st.set_page_config(
     page_title="IoT-Enabled Smart Footwear",
@@ -106,18 +109,24 @@ with top_left:
         st.rerun()
 
 with top_right:
+    current_ist = datetime.now(IST)
     st.markdown(
-        f'<div class="clock">◷ {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}</div>',
+        f'<div class="clock">◷ {current_ist.strftime("%d/%m/%Y %H:%M:%S")}</div>',
         unsafe_allow_html=True
     )
 
 try:
     cache_buster = str(int(time.time()))
 
+    request_headers = {
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache",
+    }
+
     data_response = requests.get(
         DATA_API,
         params={"_t": cache_buster},
-        headers={"Cache-Control": "no-cache"},
+        headers=request_headers,
         timeout=15
     )
     data_response.raise_for_status()
@@ -126,7 +135,7 @@ try:
     latest_response = requests.get(
         LATEST_API,
         params={"_t": cache_buster},
-        headers={"Cache-Control": "no-cache"},
+        headers=request_headers,
         timeout=15
     )
     latest_response.raise_for_status()
@@ -136,9 +145,10 @@ try:
         if not data:
             data = [latest_data]
         else:
+            latest_timestamp = latest_data.get("timestamp")
             data = [
                 row for row in data
-                if row.get("timestamp") != latest_data.get("timestamp")
+                if row.get("timestamp") != latest_timestamp
             ]
             data.append(latest_data)
 
@@ -169,12 +179,20 @@ try:
         st.error(f"Missing API fields: {missing_columns}")
         st.stop()
 
-    df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
+    # Render stores backend timestamps in UTC. Display them in IST.
+    df["timestamp"] = pd.to_datetime(
+        df["timestamp"],
+        errors="coerce",
+        utc=True
+    )
+
     df = df.dropna(subset=["timestamp"]).sort_values("timestamp")
 
     if df.empty:
         st.warning("Waiting for valid sensor data...")
         st.stop()
+
+    df["display_timestamp"] = df["timestamp"].dt.tz_convert(IST)
 
     latest = df.iloc[-1]
     cutoff = latest["timestamp"] - pd.Timedelta(minutes=10)
@@ -197,7 +215,7 @@ try:
         for sensor, color in pressure_colors.items():
             fig_pressure.add_trace(
                 go.Scatter(
-                    x=recent["timestamp"],
+                    x=recent["display_timestamp"],
                     y=recent[sensor],
                     mode="lines+markers",
                     name=sensor,
@@ -247,7 +265,7 @@ try:
 
         fig_temp.add_trace(
             go.Scatter(
-                x=recent["timestamp"],
+                x=recent["display_timestamp"],
                 y=recent["temp1"],
                 mode="lines+markers",
                 name="Temperature",
@@ -350,7 +368,7 @@ try:
 
     table.insert(0, "No.", range(1, len(table) + 1))
 
-    table["timestamp"] = table["timestamp"].dt.strftime(
+    table["timestamp"] = table["display_timestamp"].dt.strftime(
         "%d-%b-%Y %I:%M:%S %p"
     )
 
@@ -423,7 +441,7 @@ try:
     csv_response = requests.get(
         CSV_API,
         params={"_t": cache_buster},
-        headers={"Cache-Control": "no-cache"},
+        headers=request_headers,
         timeout=15
     )
     csv_response.raise_for_status()
