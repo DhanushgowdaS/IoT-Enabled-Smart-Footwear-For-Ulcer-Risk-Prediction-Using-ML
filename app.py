@@ -11,7 +11,6 @@ from streamlit_autorefresh import st_autorefresh
 API_BASE = "https://iot-enabled-smart-footwear-for-ulcer.onrender.com"
 DATA_API = f"{API_BASE}/data"
 LATEST_API = f"{API_BASE}/latest"
-CSV_API = f"{API_BASE}/download_csv"
 
 IST = ZoneInfo("Asia/Kolkata")
 
@@ -149,6 +148,12 @@ try:
                 if row.get("timestamp") != latest_timestamp
             ]
             data.append(latest_data)
+
+    # Keep the most recent successful data in this browser session.
+    if data:
+        st.session_state["last_data"] = data
+    elif st.session_state.get("last_data"):
+        data = st.session_state["last_data"]
 
     if not data:
         st.warning("Waiting for sensor data...")
@@ -420,17 +425,13 @@ try:
 
     st.caption("Showing latest 20 readings")
 
-    csv_response = requests.get(
-        CSV_API,
-        params={"_t": cache_buster},
-        headers=headers,
-        timeout=15
-    )
-    csv_response.raise_for_status()
+    csv_df = df.drop(columns=["display_timestamp"], errors="ignore").copy()
+    csv_df["timestamp"] = csv_df["timestamp"].dt.strftime("%Y-%m-%d %H:%M:%S%z")
+    csv_data = csv_df.to_csv(index=False).encode("utf-8")
 
     st.download_button(
         "⬇ Download Sensor Data (CSV)",
-        csv_response.content,
+        csv_data,
         file_name="sensor_data.csv",
         mime="text/csv",
         use_container_width=False,
