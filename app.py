@@ -361,7 +361,7 @@ try:
                 Based on Readings from the Last 5 Minutes
             </div>
             <div class="risk-counts">
-                📊 Readings : {len(recent)}&nbsp;&nbsp;&nbsp;
+                📊 Readings (Last 5 Minutes) : {len(recent)}&nbsp;&nbsp;&nbsp;
                 ⚠️ Mismatch : {latest["mismatch_percent"]:.2f}%
             </div>
         </div>
