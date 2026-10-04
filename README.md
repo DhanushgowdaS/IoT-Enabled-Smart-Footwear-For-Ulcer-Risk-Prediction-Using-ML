@@ -2,9 +2,9 @@
 
 An ESP32-based smart footwear system that monitors four FSR pressure sensors and a DS18B20 temperature sensor for diabetic foot-ulcer risk indication.
 
-## Client 2 ML Approach
+## ML Approach
 
-Client 2 uses healthy-reference data from Person A and Person B to learn normal pressure/temperature patterns.
+The system uses healthy-reference data from Person A and Person B to learn normal pressure/temperature patterns.
 
 - Isolation Forest anomaly detection
 - StandardScaler preprocessing
@@ -37,10 +37,10 @@ Mismatch % is a project-specific deviation index from the healthy reference patt
 ```text
 Hardware/
 Firmware/
-Data/client2_footwear_dataset.csv
-ML/train_model_client2.py
-ML/test_model_client2.py
-ML/CLIENT2_ML_README.md
+Data/footwear_dataset.csv
+ML/train_model.py
+ML/test_model.py
+ML/ML_README.md
 PROCEDURE.md
 requirements.txt
 README.md
@@ -48,8 +48,8 @@ README.md
 
 ## ML Model Artifact
 
-The binary model file `ML/ulcer_risk_model.pkl` is generated locally by `ML/train_model_client2.py`. The repository currently keeps the reproducible training workflow rather than the generated binary artifact.
+The binary model file `ML/ulcer_risk_model.pkl` is generated locally by `ML/train_model.py`.
 
 ## Current Status
 
-Repository reset for Client 2. Source dataset, firmware sensor tests, hardware documentation, and healthy-baseline ML workflow are prepared. FastAPI and Streamlit integration will be added after ML validation.
+Source dataset, firmware sensor tests, hardware documentation, and healthy-baseline ML workflow are prepared. FastAPI and Streamlit integration will be added after ML validation.
