@@ -29,8 +29,8 @@ Serial Monitor:
 // ==========================
 // WiFi Configuration
 // ==========================
-const char* ssid = "YOUR_WIFI_NAME";
-const char* password = "YOUR_WIFI_PASSWORD";
+const char* ssid = "Admin";
+const char* password = "password";
 
 // ==========================
 // Render FastAPI Endpoint
