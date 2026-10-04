@@ -46,6 +46,10 @@ requirements.txt
 README.md
 ```
 
+## ML Model Artifact
+
+The binary model file `ML/ulcer_risk_model.pkl` is generated locally by `ML/train_model_client2.py`. The repository currently keeps the reproducible training workflow rather than the generated binary artifact.
+
 ## Current Status
 
-Repository reset for Client 2. ML training files and source dataset are prepared. FastAPI and Streamlit integration will be added after ML validation.
+Repository reset for Client 2. Source dataset, firmware sensor tests, hardware documentation, and healthy-baseline ML workflow are prepared. FastAPI and Streamlit integration will be added after ML validation.
