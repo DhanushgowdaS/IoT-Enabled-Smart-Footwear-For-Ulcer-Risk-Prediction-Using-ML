@@ -1,5 +1,5 @@
 const int FSR1 = 34;
-const int FSR2 = 36;
+const int FSR2 = 35;
 const int FSR3 = 32;
 const int FSR4 = 33;
 
