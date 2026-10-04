@@ -27,7 +27,7 @@ Mismatch % is a project-specific deviation index from the healthy reference patt
 | ESP32 | Component |
 |---|---|
 | GPIO34 | FSR1 |
-| GPIO36 | FSR2 |
+| GPIO35 | FSR2 |
 | GPIO32 | FSR3 |
 | GPIO33 | FSR4 |
 | GPIO4 | DS18B20 DATA |
@@ -42,7 +42,6 @@ ML/
 ├── train_model.py
 ├── predict.py
 ├── test_model.py
-├── TESTING.md
 ├── ML_README.md
 ├── MODEL_VALIDATION_REPORT.md
 ├── model_validation_report.json
@@ -57,11 +56,15 @@ PROCEDURE.md
 
 ## Backend and Dashboard
 
-- `main.py` — FastAPI backend and data storage
-- `app.py` — Streamlit dashboard
-- `render.yaml` — basic Render configuration for the API
+- `main.py` — FastAPI backend, ML inference and data storage
+- `app.py` — Streamlit real-time dashboard
+- `render.yaml` — Render configuration for the API
 - `ML/predict.py` — reusable model inference
+
+## Live Integration
+
+ESP32 sends averaged sensor readings to the deployed FastAPI backend over HTTPS every 5 seconds. The backend runs the saved healthy-baseline ML model and stores the resulting reading. The Streamlit dashboard reads the latest and recent records from the same backend.
 
 ## Current Status
 
-Source dataset, firmware sensor tests, hardware documentation, and the validated healthy-baseline ML workflow are prepared. The model uses an 80/10/10 train/validation/test split and passes full inference sanity checks. FastAPI and Streamlit integration will be added next.
+The healthy-baseline ML workflow, ESP32 firmware, FastAPI backend, cloud API integration and Streamlit dashboard are prepared for live testing.
