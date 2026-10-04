@@ -86,6 +86,7 @@ void setup() {
   }
 
   startTime = millis();
+  lastSampleTime = millis() - 1000;
 }
 
 void loop() {
@@ -96,6 +97,13 @@ void loop() {
     delay(1000);
     return;
   }
+
+  if (millis() - lastSampleTime < 1000) {
+    delay(20);
+    return;
+  }
+
+  lastSampleTime = millis();
 
   sumFSR1 += analogRead(FSR1_PIN);
   sumFSR2 += analogRead(FSR2_PIN);
