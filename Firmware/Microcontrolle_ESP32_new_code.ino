@@ -8,7 +8,7 @@ Reads:
 - 4 × FSR pressure sensors
 - 1 × DS18B20 temperature sensor
 
-Every 10 seconds, the sensor values are averaged and sent
+Every 5 seconds, the sensor values are averaged and sent
 to the FastAPI backend over HTTPS.
 
 Backend:
@@ -150,9 +150,9 @@ void loop() {
   }
 
   // ==========================
-  // Send Every 10 Seconds
+  // Send Every 5 Seconds
   // ==========================
-  if (millis() - startTime >= 10000 &&
+  if (millis() - startTime >= 5000 &&
       sensorSampleCount > 0 &&
       tempSampleCount > 0) {
 
