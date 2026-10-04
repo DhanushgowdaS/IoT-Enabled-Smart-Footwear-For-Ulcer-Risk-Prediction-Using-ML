@@ -102,3 +102,43 @@ Planned next stages:
 6. Update ESP32 API firmware.
 7. Update Streamlit dashboard.
 8. Test and deploy.
+
+
+---
+
+## 2026-10-04 — ML Training, Validation and Testing
+
+### What
+Built and validated the new healthy-baseline ML model.
+
+### When
+2026-10-04
+
+### Why
+To use the supplied healthy reference data to learn normal pressure/temperature patterns and measure deviation for ulcer-risk indication without inventing clinical labels.
+
+### Where
+- `ML/train_model.py`
+- `ML/predict.py`
+- `ML/test_model.py`
+- `ML/ML_README.md`
+- `ML/MODEL_VALIDATION_REPORT.md`
+- `ML/model_validation_report.json`
+- `ML/test_results.json`
+
+### How
+1. Repaired the six joined CSV lines in memory.
+2. Obtained 6,103 logical records.
+3. Used 5,548 RAW records and excluded 555 AVG10 records.
+4. Split RAW data into 4,438 training, 555 validation and 555 test records.
+5. Fit StandardScaler on training data only.
+6. Trained a 500-tree Isolation Forest on healthy Person A + Person B data.
+7. Calibrated q95, q98 and q99 thresholds from validation data only.
+8. Tested all 5,548 RAW records through the saved model.
+9. Tested a deterministic random real dataset line.
+10. Tested additional synthetic sensor patterns for inference stability and valid output ranges.
+
+### Result
+All software/model pipeline tests passed. The held-out healthy test produced 3.60% above q95, 1.08% above q98 and 0.90% above q99.
+
+Because the supplied data contains healthy reference records only, these results are stability/false-alert measurements, not ulcer classification accuracy.
