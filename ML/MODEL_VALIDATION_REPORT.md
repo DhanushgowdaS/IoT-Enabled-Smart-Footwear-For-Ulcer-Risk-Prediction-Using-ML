@@ -2,55 +2,81 @@
 
 ## Final status
 
-**PASSED** — training, validation, held-out testing, full-dataset inference, random-row inference, and synthetic-data pipeline tests completed without errors.
+**PASSED** — the healthy-reference model was rebuilt to match the 10-second ESP32 input format and to use scenario context.
 
-## Dataset used
+## Dataset
 
-The supplied footwear dataset was repaired before parsing. Six physical CSV lines contained two concatenated records.
+- Logical records after CSV repair: 6,103
+- AVG10 records used for ML: 555
+- RAW records excluded from model fitting: 5,548
+- Healthy reference persons: Person A and Person B
+- Scenarios: 9
 
-- Logical records: 6,103
-- RAW records used by ML: 5,548
-- AVG10 records excluded: 555
-- Healthy persons: Person A and Person B
+## Training Input
 
-## 80 / 10 / 10 split
+The model now uses **AVG10 records only**. These records represent the 10-second averaged sensor windows used by the ESP32.
 
-The 5,548 RAW records were divided chronologically inside each Person + Scenario group:
+This removes the previous mismatch where the model was fitted on RAW readings while the live device sent averaged readings.
 
-| Split | Rows | Share |
-|---|---:|---:|
-| Training | 4,438 | 79.99% |
-| Validation | 555 | 10.00% |
-| Testing | 555 | 10.00% |
+## Scenario Awareness
 
-Training fits the scaler and Isolation Forest. Validation is used only to calibrate q95/q98/q99. The final test split remains untouched until evaluation.
+Scenario is included as one-hot encoded model features.
+
+Therefore a live reading marked Walking is evaluated in the context of the healthy Walking patterns in the reference dataset.
+
+## 80 / 10 / 10 Split
+
+The AVG10 records are split chronologically inside each Person + Scenario group:
+
+| Split | Rows |
+|---|---:|
+| Training | 444 |
+| Validation | 55 |
+| Testing | 56 |
 
 ## Model
 
 - StandardScaler
 - IsolationForest
 - 500 trees
-- Fixed random state: 42
-- 13 engineered features
+- Random state: 42
+- 13 numeric features
+- 9 one-hot scenario features
 
-## Held-out healthy test
+## Validation Thresholds
 
-The test set contains healthy reference records, so the useful measurement is healthy false-alert/stability rate at the selected anomaly thresholds, not classification accuracy.
+| Threshold | Value |
+|---|---:|
+| q50 | -0.0005867 |
+| q90 | 0.0273910 |
+| q95 | 0.0383011 |
+| q98 | 0.0395712 |
+| q99 | 0.0513628 |
 
-The generated JSON report contains the exact thresholds and held-out rates. Risk labels in the application are aligned with the displayed mismatch percentage: 0–10% Safe, above 10–33.33% Low Risk, above 33.33–66.67% Medium Risk, and above 66.67% High Risk.
+## Held-Out Healthy Test
 
-## Random real-dataset test
+All 56 held-out AVG10 healthy records were classified as **Safe** under the displayed mismatch-risk rule:
 
-A deterministic random RAW line from the new dataset was passed through the saved model after training. The exact row and prediction are stored in \`test_results.json\`.
+| Risk indication | Count |
+|---|---:|
+| Safe | 56 |
+| Low Risk | 0 |
+| Medium Risk | 0 |
+| High Risk | 0 |
 
-## Synthetic tests
+The 60 healthy AVG10 Walking reference records also produced:
 
-Additional synthetic sensor patterns were passed through the inference pipeline to verify finite scores, bounded mismatch values, and valid risk labels.
+| Walking risk indication | Count |
+|---|---:|
+| Safe | 60 |
+| Low Risk | 0 |
+| Medium Risk | 0 |
+| High Risk | 0 |
 
-These synthetic tests are software/pipeline tests, not clinical validation.
+This is a healthy-reference stability check, not clinical validation.
 
-## What the model predicts
+## Important Limitation
 
-The model does not predict \`ulcer = yes/no\` from a labeled dataset. It predicts how unusual the current pressure-temperature pattern is compared with the healthy reference pattern.
+The supplied dataset contains healthy reference data only. The system therefore provides a **healthy-pattern deviation / ulcer-risk indication** and does not establish clinical ulcer probability, diagnostic accuracy, sensitivity, or specificity.
 
-The next real-time layer can combine repeated readings over a 5-minute window to look for sustained deviation before producing the overall project-level ulcer-risk indication.
+Mismatch % is not ulcer probability.
