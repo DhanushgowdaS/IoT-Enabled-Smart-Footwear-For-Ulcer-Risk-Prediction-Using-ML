@@ -1,0 +1,38 @@
+{
+  "status": "passed",
+  "full_raw_prediction_rows": 5548,
+  "random_dataset_line": {
+    "RecordNo": 4143,
+    "Person": "Person A",
+    "Scenario": "Right_Shift",
+    "FSR1": 4095.0,
+    "FSR2": 0.0,
+    "FSR3": 4095.0,
+    "FSR4": 0.0,
+    "Temperature": 32.38,
+    "AnomalyScore": -0.049556026241725004,
+    "HealthyMatchPercent": 100.0,
+    "MismatchPercent": 0.0,
+    "UlcerRisk": "Safe"
+  },
+  "synthetic_tests": [
+    {
+      "AnomalyScore": 0.14589200929025614,
+      "HealthyMatchPercent": 3.0186661638909555,
+      "MismatchPercent": 96.98133383610904,
+      "UlcerRisk": "Medium Risk"
+    },
+    {
+      "AnomalyScore": 0.11698126682659449,
+      "HealthyMatchPercent": 50.996734435508515,
+      "MismatchPercent": 49.003265564491485,
+      "UlcerRisk": "Low Risk"
+    },
+    {
+      "AnomalyScore": 0.17849029004742456,
+      "HealthyMatchPercent": 0.0,
+      "MismatchPercent": 100.0,
+      "UlcerRisk": "High Risk"
+    }
+  ]
+}
