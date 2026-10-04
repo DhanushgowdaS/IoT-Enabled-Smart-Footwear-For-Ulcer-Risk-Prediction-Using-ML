@@ -47,7 +47,8 @@ def init_storage():
             csv.writer(f).writerow([
                 "Timestamp", "Scenario", "FSR1", "FSR2", "FSR3", "FSR4",
                 "Temperature", "AveragePressure", "MaximumPressure",
-                "AnomalyScore", "HealthyMatchPercent", "MismatchPercent", "UlcerRisk"
+                "AnomalyScore", "HealthyMatchPercent", "MismatchPercent",
+                "UlcerRisk",
             ])
 
 
@@ -81,8 +82,10 @@ def row_to_dict(row):
     }
 
 
-def no_store(response: Response):
-    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+def no_store(response):
+    response.headers["Cache-Control"] = (
+        "no-store, no-cache, must-revalidate, max-age=0"
+    )
     response.headers["Pragma"] = "no-cache"
 
 
@@ -96,6 +99,7 @@ def log_data(data: SensorData):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     inputs = pd.DataFrame([{
+        "Scenario": data.scenario,
         "FSR1": data.fsr1,
         "FSR2": data.fsr2,
         "FSR3": data.fsr3,
@@ -105,8 +109,16 @@ def log_data(data: SensorData):
 
     result = predict(inputs).iloc[0]
 
-    avg = (data.fsr1 + data.fsr2 + data.fsr3 + data.fsr4) / 4
-    mx = max(data.fsr1, data.fsr2, data.fsr3, data.fsr4)
+    avg = (
+        data.fsr1 + data.fsr2 + data.fsr3 + data.fsr4
+    ) / 4
+
+    mx = max(
+        data.fsr1,
+        data.fsr2,
+        data.fsr3,
+        data.fsr4,
+    )
 
     values = (
         timestamp,
@@ -125,6 +137,7 @@ def log_data(data: SensorData):
     )
 
     global LATEST_READING
+
     LATEST_READING = {
         "timestamp": timestamp,
         "scenario": data.scenario,
@@ -153,7 +166,10 @@ def log_data(data: SensorData):
         conn.execute(f"""
         DELETE FROM readings
         WHERE id NOT IN (
-            SELECT id FROM readings ORDER BY id DESC LIMIT {MAX_STORED_READINGS}
+            SELECT id
+            FROM readings
+            ORDER BY id DESC
+            LIMIT {MAX_STORED_READINGS}
         )
         """)
 
@@ -213,5 +229,8 @@ def download_csv():
         CSV_FILE,
         filename="sensor_data.csv",
         media_type="text/csv",
-        headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"}
+        headers={
+            "Cache-Control":
+                "no-store, no-cache, must-revalidate, max-age=0"
+        },
     )
