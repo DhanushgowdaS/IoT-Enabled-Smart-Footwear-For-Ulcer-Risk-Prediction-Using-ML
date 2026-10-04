@@ -206,7 +206,7 @@ try:
     df["display_timestamp"] = df["timestamp"].dt.tz_convert(IST)
 
     latest = df.iloc[-1]
-    cutoff = latest["timestamp"] - pd.Timedelta(minutes=10)
+    cutoff = latest["timestamp"] - pd.Timedelta(minutes=5)
     recent = df[df["timestamp"] >= cutoff].copy()
 
     pressure_col, temp_col = st.columns(2)
@@ -358,16 +358,11 @@ try:
                 <span class="{dot_class}">{dot}</span>&nbsp; {overall_risk}
             </div>
             <div class="risk-sub">
-                Based on Readings from the Last 10 Minutes
+                Based on Readings from the Last 5 Minutes
             </div>
             <div class="risk-counts">
-                🔴 High Risk : {risk_counts["High Risk"]}&nbsp;&nbsp;
-                🟠 Medium Risk : {risk_counts["Medium Risk"]}&nbsp;&nbsp;
-                🟡 Low Risk : {risk_counts["Low Risk"]}&nbsp;&nbsp;
-                🟢 Safe : {risk_counts["Safe"]}
-            </div>
-            <div class="risk-sub" style="margin-top:12px;margin-bottom:0;">
-                Total Readings Analysed: {len(recent)}
+                📊 Readings : {len(recent)}&nbsp;&nbsp;&nbsp;
+                ⚠️ Mismatch : {latest["mismatch_percent"]:.2f}%
             </div>
         </div>
         """,
