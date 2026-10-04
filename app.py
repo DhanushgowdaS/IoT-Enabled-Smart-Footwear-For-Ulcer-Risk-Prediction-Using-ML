@@ -1,8 +1,10 @@
+import time
+from datetime import datetime
+
 import pandas as pd
 import plotly.graph_objects as go
 import requests
 import streamlit as st
-from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 
 API_BASE = "https://iot-enabled-smart-footwear-for-ulcer.onrender.com"
@@ -110,27 +112,55 @@ with top_right:
     )
 
 try:
-    data_response = requests.get(DATA_API, timeout=15)
+    cache_buster = str(int(time.time()))
+
+    data_response = requests.get(
+        DATA_API,
+        params={"_t": cache_buster},
+        headers={"Cache-Control": "no-cache"},
+        timeout=15
+    )
     data_response.raise_for_status()
     data = data_response.json()
 
-    if not data:
-        latest_response = requests.get(LATEST_API, timeout=15)
-        latest_response.raise_for_status()
-        latest_data = latest_response.json()
+    latest_response = requests.get(
+        LATEST_API,
+        params={"_t": cache_buster},
+        headers={"Cache-Control": "no-cache"},
+        timeout=15
+    )
+    latest_response.raise_for_status()
+    latest_data = latest_response.json()
 
-        if latest_data:
+    if latest_data:
+        if not data:
             data = [latest_data]
+        else:
+            data = [
+                row for row in data
+                if row.get("timestamp") != latest_data.get("timestamp")
+            ]
+            data.append(latest_data)
 
     if not data:
         st.warning("Waiting for sensor data...")
         st.stop()
 
     df = pd.DataFrame(data)
+
     required_columns = [
-        "timestamp", "scenario", "fsr1", "fsr2", "fsr3", "fsr4",
-        "temp1", "avg_pressure", "max_pressure",
-        "healthy_match_percent", "mismatch_percent", "ulcer_risk"
+        "timestamp",
+        "scenario",
+        "fsr1",
+        "fsr2",
+        "fsr3",
+        "fsr4",
+        "temp1",
+        "avg_pressure",
+        "max_pressure",
+        "healthy_match_percent",
+        "mismatch_percent",
+        "ulcer_risk"
     ]
 
     missing_columns = [c for c in required_columns if c not in df.columns]
@@ -252,13 +282,6 @@ try:
             use_container_width=True,
             config={"displayModeBar": False}
         )
-
-    st.markdown(
-        """
-        <div style="margin-top:10px;"></div>
-        """,
-        unsafe_allow_html=True
-    )
 
     risk_order = ["High Risk", "Medium Risk", "Low Risk", "Safe"]
     counts = recent["ulcer_risk"].value_counts()
@@ -397,7 +420,12 @@ try:
 
     st.caption("Showing latest 20 readings")
 
-    csv_response = requests.get(CSV_API, timeout=15)
+    csv_response = requests.get(
+        CSV_API,
+        params={"_t": cache_buster},
+        headers={"Cache-Control": "no-cache"},
+        timeout=15
+    )
     csv_response.raise_for_status()
 
     st.download_button(
