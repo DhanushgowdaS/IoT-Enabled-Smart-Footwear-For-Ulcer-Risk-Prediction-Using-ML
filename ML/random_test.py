@@ -5,11 +5,13 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 from predict import predict
 
-rng = np.random.default_rng()
+rng = np.random.default_rng(20261004)
 
 rows = pd.DataFrame({
+    "Scenario": ["Walking"] * 10,
     "FSR1": rng.integers(0, 4096, 10),
     "FSR2": rng.integers(0, 4096, 10),
     "FSR3": rng.integers(0, 4096, 10),
@@ -20,4 +22,9 @@ rows = pd.DataFrame({
 result = predict(rows)
 output = pd.concat([rows, result], axis=1)
 
-print(output.to_string(index=False, float_format=lambda x: f"{x:.2f}"))
+print(
+    output.to_string(
+        index=False,
+        float_format=lambda x: f"{x:.2f}",
+    )
+)
