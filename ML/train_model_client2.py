@@ -8,7 +8,7 @@ from pathlib import Path
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 
-DATA_FILE = Path("Data/client2_footwear_dataset.csv")
+DATA_FILE = Path("Data/footwear_dataset.csv")
 MODEL_FILE = Path("ML/ulcer_risk_model.pkl")
 
 FEATURES = [
