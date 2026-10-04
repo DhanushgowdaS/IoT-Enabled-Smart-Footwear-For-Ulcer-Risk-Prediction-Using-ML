@@ -181,7 +181,7 @@ void loop() {
       avgTemp
     );
 
-    // Reset accumulators
+    // Reset accumulators after each 5-second window
     sumFSR1 = 0;
     sumFSR2 = 0;
     sumFSR3 = 0;
@@ -208,69 +208,116 @@ void sendData(
   float temp
 ) {
 
-  if (WiFi.status() != WL_CONNECTED) {
+  const int maxAttempts = 3;
 
-    Serial.println("WiFi disconnected. Data not sent");
-    return;
+  for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+
+    if (WiFi.status() != WL_CONNECTED) {
+
+      Serial.println("WiFi disconnected. Reconnecting...");
+
+      WiFi.reconnect();
+
+      unsigned long reconnectStart = millis();
+
+      while (WiFi.status() != WL_CONNECTED &&
+             millis() - reconnectStart < 10000) {
+
+        delay(250);
+      }
+
+      if (WiFi.status() != WL_CONNECTED) {
+
+        Serial.println("WiFi reconnection failed");
+
+        if (attempt < maxAttempts) {
+          delay(2000);
+          continue;
+        }
+
+        return;
+      }
+    }
+
+    WiFiClientSecure client;
+    client.setInsecure();
+
+    HTTPClient http;
+
+    http.setTimeout(8000);
+
+    if (!http.begin(client, serverUrl)) {
+
+      Serial.print("HTTP connection setup failed - Attempt ");
+      Serial.print(attempt);
+      Serial.print("/");
+      Serial.println(maxAttempts);
+
+      if (attempt < maxAttempts) {
+        delay(2000);
+        continue;
+      }
+
+      return;
+    }
+
+    http.addHeader("Content-Type", "application/json");
+
+    // ==========================
+    // Create JSON
+    // ==========================
+    StaticJsonDocument<256> doc;
+
+    doc["scenario"] = "Walking";
+    doc["fsr1"] = f1;
+    doc["fsr2"] = f2;
+    doc["fsr3"] = f3;
+    doc["fsr4"] = f4;
+    doc["temp1"] = temp;
+
+    String jsonData;
+    serializeJson(doc, jsonData);
+
+    Serial.println();
+    Serial.print("JSON Sent (Attempt ");
+    Serial.print(attempt);
+    Serial.print("/");
+    Serial.print(maxAttempts);
+    Serial.println("):");
+    Serial.println(jsonData);
+
+    // ==========================
+    // HTTP POST
+    // ==========================
+    int httpResponseCode = http.POST(jsonData);
+
+    Serial.print("HTTP Response Code: ");
+    Serial.println(httpResponseCode);
+
+    if (httpResponseCode > 0) {
+
+      String response = http.getString();
+
+      Serial.println("Server Response:");
+      Serial.println(response);
+
+      http.end();
+      return;
+
+    } else {
+
+      Serial.print("POST Failed: ");
+      Serial.println(http.errorToString(httpResponseCode));
+    }
+
+    http.end();
+
+    if (attempt < maxAttempts) {
+
+      Serial.println("Retrying in 2 seconds...");
+      delay(2000);
+    }
   }
 
-  WiFiClientSecure client;
-
-  // Render uses HTTPS.
-  // setInsecure() skips certificate verification.
-  client.setInsecure();
-
-  HTTPClient http;
-
-  http.setTimeout(30000);
-
-  if (!http.begin(client, serverUrl)) {
-
-    Serial.println("HTTP connection setup failed");
-    return;
-  }
-
-  http.addHeader("Content-Type", "application/json");
-
-  // ==========================
-  // Create JSON
-  // ==========================
-  StaticJsonDocument<256> doc;
-
-  doc["scenario"] = "Walking";
-  doc["fsr1"] = f1;
-  doc["fsr2"] = f2;
-  doc["fsr3"] = f3;
-  doc["fsr4"] = f4;
-  doc["temp1"] = temp;
-
-  String jsonData;
-  serializeJson(doc, jsonData);
-
-  Serial.println();
-  Serial.println("JSON Sent:");
-  Serial.println(jsonData);
-
-  // ==========================
-  // HTTP POST
-  // ==========================
-  int httpResponseCode = http.POST(jsonData);
-
-  Serial.print("HTTP Response Code: ");
-  Serial.println(httpResponseCode);
-
-  if (httpResponseCode > 0) {
-
-    String response = http.getString();
-
-    Serial.println("Server Response:");
-    Serial.println(response);
-
-  } else {
-
-    Serial.print("POST Failed: ");
-    Serial.println(http.errorToString(httpResponseCode));
-  }
-
-  http.end();
+  Serial.println("All POST attempts failed");
 }
