@@ -28,10 +28,11 @@
     "above_q99_percent": 0.9009009009009009,
     "risk_counts": {
       "Safe": 535,
-      "Low Risk": 14,
-      "High Risk": 5,
-      "Medium Risk": 1
-    }
+      "Low Risk": 8,
+      "Medium Risk": 3,
+      "High Risk": 9
+    },
+    "risk_rule": "Based on displayed mismatch percent: 0% Safe, <=33.33% Low Risk, <=66.67% Medium Risk, >66.67% High Risk"
   },
   "notes": [
     "The dataset contains healthy reference subjects only; no true ulcer/non-ulcer labels are available.",
