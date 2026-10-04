@@ -14,6 +14,8 @@ BASE_DIR = Path(__file__).resolve().parent
 DB_NAME = BASE_DIR / "sensor_data.db"
 CSV_FILE = BASE_DIR / "sensor_data.csv"
 
+MAX_STORED_READINGS = 500
+
 app = FastAPI(title="Smart Footwear API")
 
 
@@ -124,12 +126,14 @@ def log_data(data: SensorData):
             healthy_match_percent, mismatch_percent, ulcer_risk
         ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
         """, values)
-        conn.execute("""
+
+        conn.execute(f"""
         DELETE FROM readings
         WHERE id NOT IN (
-            SELECT id FROM readings ORDER BY id DESC LIMIT 100
+            SELECT id FROM readings ORDER BY id DESC LIMIT {MAX_STORED_READINGS}
         )
         """)
+
         conn.commit()
 
     with CSV_FILE.open("a", newline="", encoding="utf-8") as f:
@@ -153,18 +157,20 @@ def latest():
                healthy_match_percent, mismatch_percent, ulcer_risk
         FROM readings ORDER BY id DESC LIMIT 1
         """).fetchone()
+
     return row_to_dict(row) if row else {}
 
 
 @app.get("/data")
 def data():
     with sqlite3.connect(DB_NAME) as conn:
-        rows = conn.execute("""
+        rows = conn.execute(f"""
         SELECT timestamp, scenario, fsr1, fsr2, fsr3, fsr4, temp1,
                avg_pressure, max_pressure, anomaly_score,
                healthy_match_percent, mismatch_percent, ulcer_risk
-        FROM readings ORDER BY id DESC LIMIT 100
+        FROM readings ORDER BY id DESC LIMIT {MAX_STORED_READINGS}
         """).fetchall()
+
     return [row_to_dict(row) for row in rows]
 
 
