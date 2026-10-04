@@ -63,8 +63,8 @@ PROCEDURE.md
 
 ## Live Integration
 
-ESP32 sends averaged sensor readings to the deployed FastAPI backend over HTTPS every 5 seconds. The backend runs the saved healthy-baseline ML model and stores the resulting reading. The Streamlit dashboard reads the latest and recent records from the same backend.
+ESP32 sends 10-second averaged sensor readings to the deployed FastAPI backend over HTTPS. The backend runs the saved healthy-baseline ML model and stores the resulting reading. The Streamlit dashboard reads the latest and recent records from the same backend.
 
 ## Current Status
 
-The healthy-baseline ML workflow, ESP32 firmware, FastAPI backend, cloud API integration and Streamlit dashboard are prepared for live testing.
+The healthy-baseline ML workflow, 10-second AVG10-aligned ESP32 firmware, FastAPI backend, cloud API integration and Streamlit dashboard are prepared for live testing.
