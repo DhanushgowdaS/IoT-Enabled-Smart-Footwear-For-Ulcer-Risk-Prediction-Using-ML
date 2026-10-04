@@ -43,9 +43,6 @@ h1 {
 h2, h3 {
     color: #f4f7fb !important;
 }
-[data-testid="stMetric"] {
-    background: transparent;
-}
 .clock {
     color: #f3f5f9;
     font-size: 1rem;
@@ -118,28 +115,29 @@ with top_right:
 try:
     cache_buster = str(int(time.time()))
 
-    request_headers = {
+    headers = {
         "Cache-Control": "no-cache",
         "Pragma": "no-cache",
+        "X-Requested-With": "XMLHttpRequest",
     }
-
-    data_response = requests.get(
-        DATA_API,
-        params={"_t": cache_buster},
-        headers=request_headers,
-        timeout=15
-    )
-    data_response.raise_for_status()
-    data = data_response.json()
 
     latest_response = requests.get(
         LATEST_API,
         params={"_t": cache_buster},
-        headers=request_headers,
+        headers=headers,
         timeout=15
     )
     latest_response.raise_for_status()
     latest_data = latest_response.json()
+
+    data_response = requests.get(
+        DATA_API,
+        params={"_t": cache_buster},
+        headers=headers,
+        timeout=15
+    )
+    data_response.raise_for_status()
+    data = data_response.json()
 
     if latest_data:
         if not data:
@@ -159,18 +157,9 @@ try:
     df = pd.DataFrame(data)
 
     required_columns = [
-        "timestamp",
-        "scenario",
-        "fsr1",
-        "fsr2",
-        "fsr3",
-        "fsr4",
-        "temp1",
-        "avg_pressure",
-        "max_pressure",
-        "healthy_match_percent",
-        "mismatch_percent",
-        "ulcer_risk"
+        "timestamp", "scenario", "fsr1", "fsr2", "fsr3", "fsr4",
+        "temp1", "avg_pressure", "max_pressure",
+        "healthy_match_percent", "mismatch_percent", "ulcer_risk"
     ]
 
     missing_columns = [c for c in required_columns if c not in df.columns]
@@ -179,7 +168,6 @@ try:
         st.error(f"Missing API fields: {missing_columns}")
         st.stop()
 
-    # Render stores backend timestamps in UTC. Display them in IST.
     df["timestamp"] = pd.to_datetime(
         df["timestamp"],
         errors="coerce",
@@ -404,8 +392,7 @@ try:
         hide_index=True,
         column_config={
             "No.": st.column_config.NumberColumn(
-                "No.",
-                width="small"
+                "No.", width="small"
             ),
             "timestamp": st.column_config.TextColumn(
                 "timestamp"
@@ -414,24 +401,19 @@ try:
                 "Display_Status"
             ),
             "fsr1": st.column_config.NumberColumn(
-                "fsr1",
-                format="%.3f"
+                "fsr1", format="%.3f"
             ),
             "fsr2": st.column_config.NumberColumn(
-                "fsr2",
-                format="%.3f"
+                "fsr2", format="%.3f"
             ),
             "fsr3": st.column_config.NumberColumn(
-                "fsr3",
-                format="%.3f"
+                "fsr3", format="%.3f"
             ),
             "fsr4": st.column_config.NumberColumn(
-                "fsr4",
-                format="%.3f"
+                "fsr4", format="%.3f"
             ),
             "temp1": st.column_config.NumberColumn(
-                "temp1",
-                format="%.4f"
+                "temp1", format="%.4f"
             ),
         }
     )
@@ -441,7 +423,7 @@ try:
     csv_response = requests.get(
         CSV_API,
         params={"_t": cache_buster},
-        headers=request_headers,
+        headers=headers,
         timeout=15
     )
     csv_response.raise_for_status()
