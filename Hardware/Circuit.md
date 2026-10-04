@@ -5,7 +5,7 @@
 | ESP32 GPIO | Connection |
 |---|---|
 | GPIO34 | FSR1 |
-| GPIO36 | FSR2 |
+| GPIO35 | FSR2 |
 | GPIO32 | FSR3 |
 | GPIO33 | FSR4 |
 | GPIO4 | DS18B20 DATA |
