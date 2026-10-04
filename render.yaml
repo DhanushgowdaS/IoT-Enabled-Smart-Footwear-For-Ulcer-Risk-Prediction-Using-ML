@@ -2,6 +2,6 @@ services:
   - type: web
     name: smart-footwear-api
     runtime: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt && python ML/train_model.py
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /
