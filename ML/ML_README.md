@@ -33,7 +33,7 @@ The model produces:
 
 1. Anomaly score
 2. Healthy-pattern mismatch percentage
-3. Project ulcer-risk indication
+3. Ulcer-risk indication
 
 ### Mismatch Calculation
 
