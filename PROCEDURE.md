@@ -48,13 +48,11 @@ The new ML method must learn healthy pressure/temperature patterns instead of as
 `Data/client2_footwear_dataset.csv`
 
 ### How
-The dataset was checked for joined CSV records. The source contains malformed lines where two records were joined without a newline. The ML training script repairs those records in memory before filtering RAW records.
-
-AVG10 records are excluded from model training because they are derived averages.
+The source data was checked for joined CSV records. The ML training script repairs joined records in memory before filtering RAW records. AVG10 records are excluded from model training because they are derived averages.
 
 ---
 
-## 2026-10-04 — Healthy-Baseline ML
+## 2026-10-04 — Healthy-Baseline ML Workflow
 
 ### What
 Prepared an unsupervised Isolation Forest model workflow.
@@ -80,6 +78,8 @@ The Client 2 dataset provides healthy reference subjects but does not provide la
 7. Calibrate the healthy score distribution.
 8. Convert deviation to a project-specific mismatch percentage.
 9. Map mismatch to the four project risk-indication bands.
+
+The generated model artifact is created locally as `ML/ulcer_risk_model.pkl` when the training script is run.
 
 ---
 
