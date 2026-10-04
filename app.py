@@ -1,74 +1,133 @@
-import os
-
 import pandas as pd
 import requests
 import streamlit as st
-from streamlit_autorefresh import st_autorefresh
+from datetime import datetime
 
-API_URL = os.getenv("API_URL", "http://localhost:8000").rstrip("/")
+API_BASE = "https://iot-enabled-smart-footwear-for-ulcer.onrender.com"
+DATA_API = f"{API_BASE}/data"
+CSV_API = f"{API_BASE}/download_csv"
 
-st.set_page_config(page_title="Smart Footwear Dashboard", layout="wide")
-st_autorefresh(interval=1000, key="live_dashboard")
+st.set_page_config(
+    page_title="Smart Footwear Dashboard",
+    page_icon="🩺",
+    layout="wide"
+)
 
-st.title("🩺 Smart Footwear — Ulcer Risk Monitoring")
+st.title("🩺 Smart Footwear for Early Ulcer Detection")
+st.caption("AI Powered IoT Monitoring Dashboard")
 
-left, right = st.columns([1, 1])
-with left:
-    if st.button("🔄 Refresh Live Data"):
-        st.rerun()
-with right:
-    st.write(f"API: `{API_URL}`")
+st.write("**Server:**", API_BASE)
+st.write(datetime.now().strftime("%d %b %Y %H:%M:%S"))
+
+if st.button("🔄 Refresh"):
+    st.rerun()
 
 try:
-    response = requests.get(f"{API_URL}/data", timeout=10)
-    response.raise_for_status()
-    data = response.json()
+    r = requests.get(DATA_API, timeout=10)
+    r.raise_for_status()
+    data = r.json()
 
     if not data:
-        st.info("Waiting for sensor data...")
+        st.warning("Waiting for sensor data...")
+        st.stop()
+
+    df = pd.DataFrame(data)
+    df["timestamp"] = pd.to_datetime(df["timestamp"])
+    df = df.sort_values("timestamp")
+    latest = df.iloc[-1]
+
+    a, b, c, d, e = st.columns(5)
+    a.metric("FSR1", f"{latest['fsr1']:.0f}")
+    b.metric("FSR2", f"{latest['fsr2']:.0f}")
+    c.metric("FSR3", f"{latest['fsr3']:.0f}")
+    d.metric("FSR4", f"{latest['fsr4']:.0f}")
+    e.metric("Temperature", f"{latest['temp1']:.2f} °C")
+
+    a, b, c, d = st.columns(4)
+    a.metric("Average", f"{latest['avg_pressure']:.2f}")
+    b.metric("Maximum", f"{latest['max_pressure']:.2f}")
+    c.metric("Scenario", latest["scenario"])
+    d.metric("Ulcer Risk", latest["ulcer_risk"])
+
+    st.subheader("Pressure")
+    st.line_chart(
+        df.set_index("timestamp")[["fsr1", "fsr2", "fsr3", "fsr4"]],
+        use_container_width=True
+    )
+
+    st.subheader("Temperature")
+    st.line_chart(
+        df.set_index("timestamp")[["temp1"]],
+        use_container_width=True
+    )
+
+    st.subheader("Machine Learning Result")
+    a, b, c = st.columns(3)
+    a.metric("Healthy Match", f"{latest['healthy_match_percent']:.1f}%")
+    b.metric("Mismatch", f"{latest['mismatch_percent']:.1f}%")
+    c.metric("Ulcer Risk", latest["ulcer_risk"])
+
+    risk = str(latest["ulcer_risk"]).lower()
+
+    if risk == "safe":
+        st.success(latest["ulcer_risk"])
+    elif risk == "low risk":
+        st.info(latest["ulcer_risk"])
+    elif risk == "medium risk":
+        st.warning(latest["ulcer_risk"])
     else:
-        df = pd.DataFrame(data)
+        st.error(latest["ulcer_risk"])
 
-        col1, col2 = st.columns(2)
-        with col1:
-            st.subheader("Pressure Analysis")
-            st.line_chart(df[["fsr1", "fsr2", "fsr3", "fsr4"]])
-        with col2:
-            st.subheader("Temperature")
-            st.line_chart(df[["temp1"]])
+    df["Time"] = df["timestamp"].dt.strftime("%H:%M:%S")
 
-        latest = df.iloc[0]
-        st.subheader("Latest ML Result")
-        a, b, c = st.columns(3)
-        a.metric("Healthy Match", f"{latest['healthy_match_percent']:.1f}%")
-        b.metric("Mismatch", f"{latest['mismatch_percent']:.1f}%")
-        c.metric("Ulcer Risk", str(latest["ulcer_risk"]))
+    table = df[
+        [
+            "Time",
+            "scenario",
+            "ulcer_risk",
+            "fsr1",
+            "fsr2",
+            "fsr3",
+            "fsr4",
+            "temp1",
+            "avg_pressure",
+            "max_pressure",
+            "healthy_match_percent",
+            "mismatch_percent",
+        ]
+    ].tail(20)
 
-        st.subheader("Latest Entries & Status")
-        table = df.head(20).copy()
-        table.insert(0, "No.", range(1, len(table) + 1))
-        table = table.rename(columns={
-            "timestamp": "Time",
+    table = table.rename(
+        columns={
             "scenario": "Scenario",
+            "ulcer_risk": "Ulcer Risk",
             "fsr1": "FSR1",
             "fsr2": "FSR2",
             "fsr3": "FSR3",
             "fsr4": "FSR4",
             "temp1": "Temperature",
+            "avg_pressure": "Average Pressure",
+            "max_pressure": "Maximum Pressure",
             "healthy_match_percent": "Healthy Match %",
             "mismatch_percent": "Mismatch %",
-            "ulcer_risk": "Ulcer Risk",
-        })
+        }
+    )
 
-        st.dataframe(
-            table[[
-                "No.", "Time", "Scenario", "FSR1", "FSR2", "FSR3", "FSR4",
-                "Temperature", "Healthy Match %", "Mismatch %", "Ulcer Risk"
-            ]],
-            use_container_width=True,
-            hide_index=True,
-        )
-except requests.RequestException as exc:
-    st.error(f"Connection failed: {exc}")
-except Exception as exc:
-    st.error(f"Dashboard error: {exc}")
+    st.dataframe(
+        table,
+        hide_index=True,
+        use_container_width=True
+    )
+
+    csv = requests.get(CSV_API, timeout=10).content
+    st.download_button(
+        "Download CSV",
+        csv,
+        file_name="sensor_data.csv",
+        mime="text/csv"
+    )
+
+except requests.RequestException as e:
+    st.error(f"Connection failed: {e}")
+except Exception as e:
+    st.error(str(e))
