@@ -4,7 +4,7 @@ import csv
 import sqlite3
 
 import pandas as pd
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
@@ -13,8 +13,9 @@ from ML.predict import predict
 BASE_DIR = Path(__file__).resolve().parent
 DB_NAME = BASE_DIR / "sensor_data.db"
 CSV_FILE = BASE_DIR / "sensor_data.csv"
-
 MAX_STORED_READINGS = 500
+
+LATEST_READING = {}
 
 app = FastAPI(title="Smart Footwear API")
 
@@ -80,6 +81,11 @@ def row_to_dict(row):
     }
 
 
+def no_store(response: Response):
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+
+
 @app.get("/")
 def root():
     return {"status": "ok", "service": "Smart Footwear API"}
@@ -118,6 +124,23 @@ def log_data(data: SensorData):
         str(result["UlcerRisk"]),
     )
 
+    global LATEST_READING
+    LATEST_READING = {
+        "timestamp": timestamp,
+        "scenario": data.scenario,
+        "fsr1": data.fsr1,
+        "fsr2": data.fsr2,
+        "fsr3": data.fsr3,
+        "fsr4": data.fsr4,
+        "temp1": data.temp1,
+        "avg_pressure": avg,
+        "max_pressure": mx,
+        "anomaly_score": float(result["AnomalyScore"]),
+        "healthy_match_percent": float(result["HealthyMatchPercent"]),
+        "mismatch_percent": float(result["MismatchPercent"]),
+        "ulcer_risk": str(result["UlcerRisk"]),
+    }
+
     with sqlite3.connect(DB_NAME) as conn:
         conn.execute("""
         INSERT INTO readings(
@@ -149,7 +172,12 @@ def log_data(data: SensorData):
 
 
 @app.get("/latest")
-def latest():
+def latest(response: Response):
+    no_store(response)
+
+    if LATEST_READING:
+        return LATEST_READING
+
     with sqlite3.connect(DB_NAME) as conn:
         row = conn.execute("""
         SELECT timestamp, scenario, fsr1, fsr2, fsr3, fsr4, temp1,
@@ -162,7 +190,9 @@ def latest():
 
 
 @app.get("/data")
-def data():
+def data(response: Response):
+    no_store(response)
+
     with sqlite3.connect(DB_NAME) as conn:
         rows = conn.execute(f"""
         SELECT timestamp, scenario, fsr1, fsr2, fsr3, fsr4, temp1,
@@ -171,9 +201,17 @@ def data():
         FROM readings ORDER BY id DESC LIMIT {MAX_STORED_READINGS}
         """).fetchall()
 
-    return [row_to_dict(row) for row in rows]
+    if rows:
+        return [row_to_dict(row) for row in rows]
+
+    return [LATEST_READING] if LATEST_READING else []
 
 
 @app.get("/download_csv")
 def download_csv():
-    return FileResponse(CSV_FILE, filename="sensor_data.csv", media_type="text/csv")
+    return FileResponse(
+        CSV_FILE,
+        filename="sensor_data.csv",
+        media_type="text/csv",
+        headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"}
+    )
