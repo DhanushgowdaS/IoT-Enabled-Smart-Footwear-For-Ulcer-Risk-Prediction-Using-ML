@@ -52,4 +52,4 @@ The binary model file `ML/ulcer_risk_model.pkl` is generated locally by `ML/trai
 
 ## Current Status
 
-Source dataset, firmware sensor tests, hardware documentation, and healthy-baseline ML workflow are prepared. FastAPI and Streamlit integration will be added after ML validation.
+Source dataset, firmware sensor tests, hardware documentation, and the validated healthy-baseline ML workflow are prepared. The model uses an 80/10/10 train/validation/test split and passes full inference sanity checks. FastAPI and Streamlit integration will be added next.
