@@ -2,43 +2,45 @@
 
 ## Concept
 
-The model learns the pressure and temperature patterns of healthy reference users and measures how much a new footwear reading deviates from that healthy pattern.
+The model learns healthy pressure and temperature patterns using the same **10-second averaged format** sent by the ESP32.
 
-\`\`\`
-Healthy reference data
+Healthy reference data from Person A and Person B is represented by AVG10 records. Scenario is included as a one-hot feature so a Walking reading is evaluated in the context of healthy Walking patterns.
+
+```text
+Healthy reference AVG10 data
 Person A + Person B
         ↓
 80% Training
         ↓
-Isolation Forest
-        ↓
-Healthy baseline
+Scenario-aware Isolation Forest
         ↑
-10% Validation → q95 / q98 / q99 thresholds
+10% Validation → q95 / q98 / q99
         ↑
-10% Test → final held-out healthy stability check
+10% Test
 
-New sensor reading
-FSR1 FSR2 FSR3 FSR4 + Temperature
+ESP32
+10-second sensor average
         ↓
-Same feature engineering + scaling
+Same feature engineering + scenario
         ↓
 Anomaly score
         ↓
 Healthy-pattern mismatch %
         ↓
 Safe / Low Risk / Medium Risk / High Risk
-\`\`\`
+```
 
 ## Data handling
 
-- RAW records are used for model training and evaluation.
-- AVG10 records are excluded because they are derived averages.
+- AVG10 records are used for model training and evaluation.
+- RAW records are excluded from model fitting.
+- AVG10 represents the same 10-second averaging window used by the ESP32.
 - Concatenated CSV records are repaired before parsing.
-- Split is chronological inside each Person + Scenario group to reduce direct temporal leakage.
+- Split is chronological inside each Person + Scenario group.
 
 ## Features
 
+Numeric:
 - FSR1, FSR2, FSR3, FSR4
 - Temperature
 - FSR average
@@ -46,39 +48,45 @@ Safe / Low Risk / Medium Risk / High Risk
 - FSR standard deviation
 - FSR distribution ratios
 
+Scenario:
+- One-hot encoding of the dataset scenarios.
+
 ## Model
 
-\`StandardScaler\` followed by \`IsolationForest\` with 500 trees.
+`StandardScaler` followed by `IsolationForest` with 500 trees.
 
-The model is unsupervised: it does not learn an \`ulcer / no-ulcer\` class because the supplied dataset does not contain true ulcer labels.
+The model is unsupervised: the supplied dataset contains healthy reference data only and does not contain clinical ulcer/no-ulcer labels.
 
 ## Prediction
 
-A higher anomaly score means the current reading is less similar to the healthy reference pattern.
+A higher anomaly score means the current reading is less similar to the healthy reference distribution for its scenario.
 
-\`\`\`
-Mismatch = clip((AnomalyScore - q95) / (q99 - q95) × 100, 0, 100)
+```
+Mismatch =
+clip((AnomalyScore - q95) / (q99 - q95) × 100, 0, 100)
+
 Healthy Match = 100 - Mismatch
-\`\`\`
+```
 
-| Condition | Risk indication |
+| Displayed mismatch | Risk indication |
 |---|---|
-| score ≤ q95 | Safe |
-| q95 < score ≤ q98 | Low Risk |
-| q98 < score ≤ q99 | Medium Risk |
-| score > q99 | High Risk |
+| 0–10% | Safe |
+| >10–33.33% | Low Risk |
+| >33.33–66.67% | Medium Risk |
+| >66.67–100% | High Risk |
 
-The q95/q98/q99 thresholds are calibrated from the validation split only.
+Mismatch % is a project-specific healthy-pattern deviation index, not ulcer probability.
 
 ## Important limitation
 
-Mismatch % is a project-specific healthy-pattern deviation index. It is not ulcer probability. Because the supplied dataset contains healthy reference data only, clinical accuracy, sensitivity, specificity, and diagnostic performance cannot be claimed yet.
+Because the dataset contains healthy reference data only, clinical accuracy, sensitivity, specificity, and diagnostic performance cannot be claimed.
 
 ## Files
 
-- \`train_model.py\` — trains and saves the model
-- \`predict.py\` — reusable inference function for FastAPI/Streamlit
-- \`test_model.py\` — full inference and sanity tests
-- \`ulcer_risk_model.pkl\` — generated model artifact
-- \`model_validation_report.json\` — training/validation/test report
-- \`test_results.json\` — final inference test output
+- `train_model.py` — trains and saves the scenario-aware AVG10 model
+- `predict.py` — reusable inference function for FastAPI
+- `test_model.py` — AVG10 model tests
+- `random_test.py` — random Walking input test
+- `ulcer_risk_model.pkl` — generated model artifact
+- `model_validation_report.json` — validation report
+- `test_results.json` — model test results
