@@ -1,38 +1,24 @@
 {
   "status": "passed",
-  "full_raw_prediction_rows": 5548,
-  "random_dataset_line": {
-    "RecordNo": 4143,
-    "Person": "Person A",
-    "Scenario": "Right_Shift",
-    "FSR1": 4095,
-    "FSR2": 0,
-    "FSR3": 4095,
-    "FSR4": 0,
-    "Temperature": 32.38,
-    "AnomalyScore": -0.049556026241725004,
-    "HealthyMatchPercent": 100,
-    "MismatchPercent": 0,
-    "UlcerRisk": "Safe"
+  "model_version": "healthy-baseline-v2-avg10-scenario-aware",
+  "full_avg10_prediction_rows": 555,
+  "walking_avg10_rows": 60,
+  "walking_risk_counts": {
+    "Safe": 60,
+    "Low Risk": 0,
+    "Medium Risk": 0,
+    "High Risk": 0
   },
-  "synthetic_tests": [
-    {
-      "AnomalyScore": 0.14589200929025614,
-      "HealthyMatchPercent": 3.0186661638909555,
-      "MismatchPercent": 96.98133383610904,
-      "UlcerRisk": "High Risk"
-    },
-    {
-      "AnomalyScore": 0.11698126682659449,
-      "HealthyMatchPercent": 50.996734435508515,
-      "MismatchPercent": 49.003265564491485,
-      "UlcerRisk": "Medium Risk"
-    },
-    {
-      "AnomalyScore": 0.17849029004742456,
-      "HealthyMatchPercent": 0,
-      "MismatchPercent": 100,
-      "UlcerRisk": "High Risk"
-    }
-  ]
+  "scenarios_tested": [
+    "Heel_Pressure",
+    "High_Pressure",
+    "Left_Shift",
+    "No_Load",
+    "Right_Shift",
+    "Sitting",
+    "Standing",
+    "Toe_Pressure",
+    "Walking"
+  ],
+  "note": "The supplied healthy AVG10 Walking reference records are all classified Safe by the rebuilt model."
 }
