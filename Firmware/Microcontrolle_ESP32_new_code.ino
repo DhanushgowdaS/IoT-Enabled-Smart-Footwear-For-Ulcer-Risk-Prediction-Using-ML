@@ -8,8 +8,8 @@ Reads:
 - 4 × FSR pressure sensors
 - 1 × DS18B20 temperature sensor
 
-Every 10 seconds, exactly 10 one-second sensor samples are averaged and sent
-to the FastAPI backend over HTTPS.
+Every 10 seconds, exactly 10 complete one-second sensor samples
+are averaged and sent to the FastAPI backend over HTTPS.
 
 Backend:
 https://iot-enabled-smart-footwear-for-ulcer.onrender.com/log
@@ -38,14 +38,18 @@ const char* serverUrl =
 #define FSR4_PIN 33
 #define ONE_WIRE_BUS 4
 
+const int SAMPLES_PER_WINDOW = 10;
+const unsigned long SAMPLE_INTERVAL_MS = 1000;
+const int MAX_POST_ATTEMPTS = 5;
+const unsigned long HTTP_TIMEOUT_MS = 15000;
+const unsigned long RETRY_DELAY_MS = 3000;
+
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature tempSensors(&oneWire);
 
-unsigned long startTime = 0;
 unsigned long lastSampleTime = 0;
 
-int sensorSampleCount = 0;
-int tempSampleCount = 0;
+int sampleCount = 0;
 
 float sumFSR1 = 0;
 float sumFSR2 = 0;
@@ -53,8 +57,16 @@ float sumFSR3 = 0;
 float sumFSR4 = 0;
 float sumTemp = 0;
 
-void setup() {
+void resetWindow() {
+  sampleCount = 0;
+  sumFSR1 = 0;
+  sumFSR2 = 0;
+  sumFSR3 = 0;
+  sumFSR4 = 0;
+  sumTemp = 0;
+}
 
+void setup() {
   Serial.begin(115200);
 
   tempSensors.begin();
@@ -85,12 +97,14 @@ void setup() {
     Serial.println("WiFi connection timeout");
   }
 
-  startTime = millis();
-  lastSampleTime = millis() - 1000;
+  resetWindow();
+  lastSampleTime = millis() - SAMPLE_INTERVAL_MS;
+
+  Serial.println();
+  Serial.println("Starting 10-second sensor window...");
 }
 
 void loop() {
-
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("WiFi disconnected. Reconnecting...");
     WiFi.reconnect();
@@ -98,102 +112,114 @@ void loop() {
     return;
   }
 
-  if (millis() - lastSampleTime < 1000) {
+  if (millis() - lastSampleTime < SAMPLE_INTERVAL_MS) {
     delay(20);
     return;
   }
 
   lastSampleTime = millis();
 
-  sumFSR1 += analogRead(FSR1_PIN);
-  sumFSR2 += analogRead(FSR2_PIN);
-  sumFSR3 += analogRead(FSR3_PIN);
-  sumFSR4 += analogRead(FSR4_PIN);
-
-  sensorSampleCount++;
-
   tempSensors.requestTemperatures();
 
   float temperature =
     tempSensors.getTempCByIndex(0);
 
-  if (temperature != DEVICE_DISCONNECTED_C) {
-    sumTemp += temperature;
-    tempSampleCount++;
-  } else {
-    Serial.println("Temperature sensor disconnected");
+  if (temperature == DEVICE_DISCONNECTED_C) {
+    Serial.println(
+      "Temperature sensor disconnected - sample discarded"
+    );
+    return;
   }
 
-  if (
-    sensorSampleCount >= 10 &&
-    tempSampleCount >= 10
-  ) {
+  float fsr1 = analogRead(FSR1_PIN);
+  float fsr2 = analogRead(FSR2_PIN);
+  float fsr3 = analogRead(FSR3_PIN);
+  float fsr4 = analogRead(FSR4_PIN);
 
-    float avgFSR1 =
-      sumFSR1 / sensorSampleCount;
+  sumFSR1 += fsr1;
+  sumFSR2 += fsr2;
+  sumFSR3 += fsr3;
+  sumFSR4 += fsr4;
+  sumTemp += temperature;
 
-    float avgFSR2 =
-      sumFSR2 / sensorSampleCount;
+  sampleCount++;
 
-    float avgFSR3 =
-      sumFSR3 / sensorSampleCount;
+  Serial.printf(
+    "Sample %d/%d collected | FSR1: %.0f | FSR2: %.0f | FSR3: %.0f | FSR4: %.0f | TEMP: %.2f C\n",
+    sampleCount,
+    SAMPLES_PER_WINDOW,
+    fsr1,
+    fsr2,
+    fsr3,
+    fsr4,
+    temperature
+  );
 
-    float avgFSR4 =
-      sumFSR4 / sensorSampleCount;
-
-    float avgTemp =
-      sumTemp / tempSampleCount;
-
-    Serial.println();
-    Serial.println("==============================");
-    Serial.println("Sending Sensor Data");
-    Serial.println("==============================");
-
-    Serial.printf(
-      "FSR1 : %.2f\n",
-      avgFSR1
-    );
-
-    Serial.printf(
-      "FSR2 : %.2f\n",
-      avgFSR2
-    );
-
-    Serial.printf(
-      "FSR3 : %.2f\n",
-      avgFSR3
-    );
-
-    Serial.printf(
-      "FSR4 : %.2f\n",
-      avgFSR4
-    );
-
-    Serial.printf(
-      "TEMP : %.2f C\n",
-      avgTemp
-    );
-
-    sendData(
-      avgFSR1,
-      avgFSR2,
-      avgFSR3,
-      avgFSR4,
-      avgTemp
-    );
-
-    sumFSR1 = 0;
-    sumFSR2 = 0;
-    sumFSR3 = 0;
-    sumFSR4 = 0;
-    sumTemp = 0;
-
-    sensorSampleCount = 0;
-    tempSampleCount = 0;
-
-    startTime = millis();
-    lastSampleTime = millis();
+  if (sampleCount < SAMPLES_PER_WINDOW) {
+    return;
   }
+
+  float avgFSR1 =
+    sumFSR1 / SAMPLES_PER_WINDOW;
+
+  float avgFSR2 =
+    sumFSR2 / SAMPLES_PER_WINDOW;
+
+  float avgFSR3 =
+    sumFSR3 / SAMPLES_PER_WINDOW;
+
+  float avgFSR4 =
+    sumFSR4 / SAMPLES_PER_WINDOW;
+
+  float avgTemp =
+    sumTemp / SAMPLES_PER_WINDOW;
+
+  Serial.println();
+  Serial.println("==============================");
+  Serial.println("10 samples collected");
+  Serial.println("Sending 10-second averaged data");
+  Serial.println("==============================");
+
+  Serial.printf(
+    "FSR1 : %.2f\n",
+    avgFSR1
+  );
+
+  Serial.printf(
+    "FSR2 : %.2f\n",
+    avgFSR2
+  );
+
+  Serial.printf(
+    "FSR3 : %.2f\n",
+    avgFSR3
+  );
+
+  Serial.printf(
+    "FSR4 : %.2f\n",
+    avgFSR4
+  );
+
+  Serial.printf(
+    "TEMP : %.2f C\n",
+    avgTemp
+  );
+
+  sendData(
+    avgFSR1,
+    avgFSR2,
+    avgFSR3,
+    avgFSR4,
+    avgTemp
+  );
+
+  resetWindow();
+
+  lastSampleTime = millis();
+
+  Serial.println();
+  Serial.println("Starting next 10-second sensor window...");
+  Serial.println();
 }
 
 void sendData(
@@ -203,17 +229,12 @@ void sendData(
   float f4,
   float temp
 ) {
-
-  const int maxAttempts = 5;
-
   for (
     int attempt = 1;
-    attempt <= maxAttempts;
+    attempt <= MAX_POST_ATTEMPTS;
     attempt++
   ) {
-
     if (WiFi.status() != WL_CONNECTED) {
-
       Serial.println(
         "WiFi disconnected. Reconnecting..."
       );
@@ -231,13 +252,12 @@ void sendData(
       }
 
       if (WiFi.status() != WL_CONNECTED) {
-
         Serial.println(
           "WiFi reconnection failed"
         );
 
-        if (attempt < maxAttempts) {
-          delay(3000);
+        if (attempt < MAX_POST_ATTEMPTS) {
+          delay(RETRY_DELAY_MS);
           continue;
         }
 
@@ -249,19 +269,18 @@ void sendData(
     client.setInsecure();
 
     HTTPClient http;
-    http.setTimeout(8000);
+    http.setTimeout(HTTP_TIMEOUT_MS);
 
     if (!http.begin(client, serverUrl)) {
-
       Serial.print(
         "HTTP connection setup failed - Attempt "
       );
       Serial.print(attempt);
       Serial.print("/");
-      Serial.println(maxAttempts);
+      Serial.println(MAX_POST_ATTEMPTS);
 
-      if (attempt < maxAttempts) {
-        delay(3000);
+      if (attempt < MAX_POST_ATTEMPTS) {
+        delay(RETRY_DELAY_MS);
         continue;
       }
 
@@ -286,12 +305,10 @@ void sendData(
     serializeJson(doc, jsonData);
 
     Serial.println();
-    Serial.print(
-      "JSON Sent (Attempt "
-    );
+    Serial.print("JSON Sent (Attempt ");
     Serial.print(attempt);
     Serial.print("/");
-    Serial.print(maxAttempts);
+    Serial.print(MAX_POST_ATTEMPTS);
     Serial.println("):");
     Serial.println(jsonData);
 
@@ -304,7 +321,6 @@ void sendData(
     Serial.println(httpResponseCode);
 
     if (httpResponseCode > 0) {
-
       String response =
         http.getString();
 
@@ -312,25 +328,33 @@ void sendData(
       Serial.println(response);
 
       http.end();
-      return;
+
+      if (
+        httpResponseCode >= 200 &&
+        httpResponseCode < 300
+      ) {
+        Serial.println("Data sent successfully.");
+        return;
+      }
+
+      Serial.println(
+        "Server returned a non-success response."
+      );
 
     } else {
-
       Serial.print("POST Failed: ");
       Serial.println(
-        http.errorToString(
-          httpResponseCode
-        )
+        http.errorToString(httpResponseCode)
       );
     }
 
     http.end();
 
-    if (attempt < maxAttempts) {
+    if (attempt < MAX_POST_ATTEMPTS) {
       Serial.println(
         "Retrying in 3 seconds..."
       );
-      delay(3000);
+      delay(RETRY_DELAY_MS);
     }
   }
 
