@@ -107,7 +107,22 @@ def log_data(data: SensorData):
         "Temperature": data.temp1,
     }])
 
-    result = predict(inputs).iloc[0]
+    all_fsr_zero = (
+        data.fsr1 == 0 and
+        data.fsr2 == 0 and
+        data.fsr3 == 0 and
+        data.fsr4 == 0
+    )
+
+    if all_fsr_zero:
+        result = pd.Series({
+            "AnomalyScore": 0.0,
+            "HealthyMatchPercent": 100.0,
+            "MismatchPercent": 0.0,
+            "UlcerRisk": "Safe",
+        })
+    else:
+        result = predict(inputs).iloc[0]
 
     avg = (
         data.fsr1 + data.fsr2 + data.fsr3 + data.fsr4
@@ -234,3 +249,4 @@ def download_csv():
                 "no-store, no-cache, must-revalidate, max-age=0"
         },
     )
+
